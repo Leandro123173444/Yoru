@@ -17,6 +17,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.GraphicsLayerScope
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawOutline
@@ -100,6 +101,27 @@ object GlassColors {
     fun accent(color: Color, dark: Boolean): Color = color.copy(alpha = if (dark) .66f else .88f)
 }
 
+// static stand-in for the live lens: a diagonal sheen plus a bright band along the top edge, drawn behind the content
+private fun DrawScope.glassSheen(outline: Outline, dark: Boolean) {
+    val corner = Offset(size.width, size.height)
+    drawOutline(outline, Brush.linearGradient(0f to Color.White.copy(alpha = if (dark) .20f else .50f), .45f to Color.Transparent,
+        1f to Color.White.copy(alpha = if (dark) .07f else .20f), start = Offset.Zero, end = corner))
+    drawOutline(outline, Brush.verticalGradient(0f to Color.White.copy(alpha = if (dark) .14f else .45f), .10f to Color.Transparent))
+}
+
+private fun Modifier.glassFinish(shape: Shape, dark: Boolean): Modifier = drawWithCache {
+    val outline = shape.createOutline(size, layoutDirection, this)
+    val stroke = Stroke(1.2.dp.toPx())
+    val corner = Offset(size.width, size.height)
+    val rim = Brush.linearGradient(0f to Color.White.copy(alpha = if (dark) .55f else .95f), .5f to Color.White.copy(alpha = .08f),
+        1f to Color.White.copy(alpha = if (dark) .26f else .6f), start = Offset.Zero, end = corner)
+    onDrawWithContent {
+        glassSheen(outline, dark)
+        drawContent()
+        drawOutline(outline, rim, style = stroke)
+    }
+}
+
 // floating glass that bends and blurs whatever scrolls beneath it
 @Composable
 fun Modifier.liquidGlass(
@@ -116,8 +138,9 @@ fun Modifier.liquidGlass(
     val dark = glassIsDark()
     if (backdrop == null || !liveGlassSupported) {
         val fill = if (surface.isSpecified) surface.copy(alpha = maxOf(surface.alpha, .9f)) else GlassColors.surface(dark, live = false)
-        return this.clip(shape).background(fill).border(1.dp, GlassColors.rim(dark), shape)
+        return this.clip(shape).background(fill)
             .then(if (onDrawSurface != null) Modifier.drawWithCache { onDrawBehind(onDrawSurface) } else Modifier)
+            .glassFinish(shape, dark)
     }
     val fill = if (surface.isSpecified) surface else GlassColors.surface(dark, live = true)
     return drawBackdrop(
@@ -149,6 +172,7 @@ fun Modifier.glassPanel(shape: Shape, emphasized: Boolean = false): Modifier {
         val outline = shape.createOutline(size, layoutDirection, this)
         val stroke = Stroke(1.dp.toPx())
         onDrawWithContent {
+            glassSheen(outline, dark)
             drawContent()
             drawOutline(outline, rim, style = stroke)
         }
@@ -166,6 +190,7 @@ fun Modifier.glassCard(shape: Shape, tint: Color = Color.Unspecified): Modifier 
         onDrawWithContent {
             drawRect(fill)
             if (tint.isSpecified) drawRect(tint, alpha = if (dark) .26f else .18f)
+            glassSheen(outline, dark)
             drawContent()
             drawOutline(outline, rim, style = stroke)
         }
