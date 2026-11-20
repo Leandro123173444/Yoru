@@ -19,7 +19,7 @@
         <item name="mediaRouteButtonTint">#FFFFFFFF</item>
     </style>
     <style name="Theme.Aurora.MediaRoute" parent="Theme.MediaRouter">
-        <item name="mediaRouteButtonStyle">@style/YORUMediaRouteButton</item>
+        <item name="mediaRouteButtonStyle">@style/AuroraMediaRouteButton</item>
         <!-- MediaRouter's theme helper computes colour contrast against these; they MUST be opaque
              or the chooser dialog throws "background can not be translucent: #0". -->
         <item name="colorPrimary">#FF15151A</item>
