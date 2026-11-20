@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chromium_downloading" formatted="false">"Mengunduh browser masuk. Ini hanya sekali dan butuh sekitar 150 MB."</string>
+    <string name="chromium_failed" formatted="false">"Browser masuk tidak dapat dimulai: %1$s"</string>
+    <string name="chromium_preparing" formatted="false">"Menyiapkan browser masuk…"</string>
+    <string name="insights_location_history_guide_desktop" formatted="false">"Setiap pemutaran menyimpan lokasi tepat saat diputar, sehingga Anda bisa melihatnya di peta. Data tetap di komputer ini, tidak pernah diunggah, dan tidak ikut dalam cadangan. Anda dapat menghapusnya di sini atau dari peta kapan saja."</string>
+    <string name="insights_places_guide_desktop" formatted="false">"Saat musik diputar, Aurora memeriksa lokasi Anda paling sering setiap 10 menit, membandingkannya dengan Rumah dan Kantor, lalu hanya menyimpan labelnya. Lokasi Rumah dan Kantor tetap di komputer ini dan tidak ikut dalam cadangan apa pun."</string>
+    <string name="insights_step_private_title_desktop" formatted="false">"Tetap di komputer Anda"</string>
+    <string name="levels_desktop_exclusive_needed" formatted="false">"Mulai pemutaran pada keluaran eksklusif untuk kalibrasi."</string>
+    <string name="levels_desktop_hardware_help" formatted="false">"Masukkan 0=dB: volume perangkat keras DAC saat ini relatif terhadap keluaran penuh."</string>
+    <string name="levels_desktop_hardware_points" formatted="false">"Atenuasi volume perangkat keras"</string>
+    <string name="levels_desktop_volume" formatted="false">"Volume Aurora diukur langsung. Kalibrasi pada volume perangkat keras DAC saat ini."</string>
+    <string name="location_linux_off" formatted="false">"Akses lokasi untuk Aurora nonaktif. Aktifkan layanan lokasi di pengaturan privasi desktop Anda dan izinkan Aurora, lalu coba lagi."</string>
+    <string name="location_open_windows_settings" formatted="false">"Buka pengaturan lokasi"</string>
+    <string name="location_unsupported" formatted="false">"Lokasi tidak tersedia di sistem ini."</string>
+    <string name="location_windows_off" formatted="false">"Windows memblokir lokasi untuk aplikasi desktop. Aktifkan akses lokasi, termasuk untuk aplikasi desktop, lalu coba lagi."</string>
+    <string name="lyrics_settings_summary_desktop" formatted="false">"Gaya sinkronisasi dan sumber lirik"</string>
+    <string name="lyrics_source_lrclib_detail" formatted="false">"Basis data lirik komunitas gratis"</string>
+    <string name="lyrics_source_server" formatted="false">"Sumber Lagu Itu Sendiri"</string>
+    <string name="lyrics_source_server_detail" formatted="false">"Lirik dari server, layanan streaming, atau file itu sendiri"</string>
+    <string name="lyrics_source_spotify_detail" formatted="false">"Lirik tersinkron dari akun Spotify yang digabungkan"</string>
+    <string name="lyrics_sources_hint" formatted="false">"Aurora memeriksanya sesuai urutan ini. Lirik tersinkron pertama yang ditemukan dipakai, jika tidak ada, lirik apa pun yang pertama."</string>
+    <string name="lyrics_sources_title_desktop" formatted="false">"Sumber Lirik"</string>
+    <string name="merge_comments_desktop" formatted="false">"Komentar SoundCloud"</string>
+    <string name="merge_comments_summary_desktop" formatted="false">"Tampilkan komentar berwaktu saat trek SoundCloud yang cocok ditemukan"</string>
+    <string name="merge_lyrics_desktop" formatted="false">"Lirik Spotify"</string>
+    <string name="merge_lyrics_summary_desktop" formatted="false">"Gunakan lirik tersinkron Spotify untuk lagu dari sumber lain"</string>
+    <string name="merge_options_desktop" formatted="false">"Opsi Penggabungan"</string>
+    <string name="merge_options_note" formatted="false">"Saat SoundCloud atau Spotify menjadi bagian pustaka terpadu Anda, Aurora dapat membawa fitur tambahannya ke lagu dari sumber lain. Matikan masing-masing sepenuhnya atau untuk lagu dari sumber tertentu."</string>
+    <string name="merge_options_summary_desktop" formatted="false">"Yang ditambahkan layanan gabungan ke lagu Anda"</string>
+    <string name="merge_songs_from" formatted="false">"Lagu Dari"</string>
+    <string name="playlist_save_to_desktop" formatted="false">"Simpan Ke"</string>
+    <string name="shortcut_seek_back" formatted="false">"Mundur"</string>
+    <string name="shortcut_seek_forward" formatted="false">"Maju"</string>
+    <string name="shortcut_show_list" formatted="false">"Tampilkan Pintasan"</string>
+    <string name="shortcut_volume_down" formatted="false">"Turunkan Volume"</string>
+    <string name="shortcut_volume_up" formatted="false">"Naikkan Volume"</string>
+    <string name="shortcuts_title" formatted="false">"Pintasan Keyboard"</string>
+    <string name="storage_youtube_desktop_note" formatted="false">"Unduhan dari YouTube disimpan ke Music/Aurora di folder pengguna Anda, yang ditambahkan ke folder musik Anda."</string>
+    <string name="tag_edit_desktop_note" formatted="false">"Menulis tag mengubah file di komputer ini. Tutup dulu di aplikasi lain."</string>
+    <string name="text_acrylic_f39ce1" formatted="false">"Akrilik"</string>
+    <string name="text_add_music_folder_a083d8" formatted="false">"Tambah folder musik"</string>
+    <string name="text_audio_decoding_copyright_the_ffmpeg_developers_lgpl_3_0_or_later_6338f2" formatted="false">"Dekode audio. Hak cipta © para developer FFmpeg. LGPL-3.0-or-later, ditautkan secara dinamis melalui JavaCPP Presets. Lisensi lengkap: https://www.gnu.org/licenses/lgpl-3.0.html"</string>
+    <string name="text_aurora_s_volume_sets_the_dac_s_own_volume_when_it_has_one_the_audi_371db5" formatted="false">"Volume Aurora mengatur volume DAC itu sendiri jika tersedia. Audio tetap bit-perfect."</string>
+    <string name="text_aurora_takes_sole_control_of_the_device_and_sends_samples_at_the_cfbce6" formatted="false">"Aurora mengambil kendali penuh atas perangkat dan mengirim sampel dengan laju dan kedalaman bit asli lagu. Aplikasi lain senyap selama Aurora memutar. Output tetap bit-perfect jika pemrosesan, volume, dan ReplayGain tidak mengubah sampel; jika perangkat menolak suatu format, Aurora beralih ke mode bersama dan Jalur Sinyal menunjukkan alasannya."</string>
+    <string name="text_background_tint_a39a12" formatted="false">"Warna latar"</string>
+    <string name="text_bit_float_012895">"Float %1$d-bit"</string>
+    <string name="text_bit_integer_72520f">"Integer %1$d-bit"</string>
+    <string name="text_bit_perfect_output_that_bypasses_the_sound_server_d2dcd9" formatted="false">"Output bit-perfect yang melewati server suara"</string>
+    <string name="text_bit_perfect_output_that_bypasses_the_windows_mixer_eff21d" formatted="false">"Output bit-perfect yang melewati mixer Windows"</string>
+    <string name="text_built_with_compose_multiplatform_material_3_389c3a" formatted="false">"Dibuat dengan Compose Multiplatform &amp; Material 3."</string>
+    <string name="text_cache_50338b" formatted="false">"Cache"</string>
+    <string name="text_cannot_resize_this_image_be7b26" formatted="false">"Tidak dapat mengubah ukuran gambar ini."</string>
+    <string name="text_ch_282ab4">"%1$d sal."</string>
+    <string name="text_choose_a_supported_image_under_100_megapixels_af6c16" formatted="false">"Pilih gambar yang didukung di bawah 100 megapiksel."</string>
+    <string name="text_choose_an_image_smaller_than_20_mb_cc7669" formatted="false">"Pilih gambar yang lebih kecil dari 20 MB."</string>
+    <string name="text_choose_an_output_device_to_use_exclusive_mode_b2a25d" formatted="false">"Pilih perangkat output untuk memakai mode eksklusif"</string>
+    <string name="text_choose_where_your_music_lives_on_this_pc_876bd8" formatted="false">"Pilih lokasi musikmu di PC ini"</string>
+    <string name="text_clear_image_cache_ff7b31" formatted="false">"Hapus cache gambar"</string>
+    <string name="text_close_to_tray_f91cc6" formatted="false">"Tutup ke baki"</string>
+    <string name="text_date_added_56ab7a" formatted="false">"Tanggal ditambahkan"</string>
+    <string name="text_device_capabilities_4cac01" formatted="false">"Kemampuan perangkat"</string>
+    <string name="text_device_exclusive_mode_and_buffer_f2337c" formatted="false">"Perangkat, mode eksklusif, dan buffer"</string>
+    <string name="text_exclusive_formats_3dafa8" formatted="false">"Format mode eksklusif"</string>
+    <string name="text_exclusive_mode_01d9b2" formatted="false">"Mode eksklusif"</string>
+    <string name="text_exclusive_mode_is_unavailable_0de552">"Mode eksklusif tidak tersedia: %1$s"</string>
+    <string name="text_exclusive_mode_is_unavailable_on_this_device_e51016" formatted="false">"Mode eksklusif tidak tersedia di perangkat ini"</string>
+    <string name="text_follow_the_playing_cover_5d2e91" formatted="false">"Ikuti sampul yang sedang diputar"</string>
+    <string name="text_glass_edges_f462cd" formatted="false">"Tepi kaca"</string>
+    <string name="text_hz_is_unavailable_using_hz_14de1c">"%1$d Hz tidak tersedia; memakai %2$d Hz."</string>
+    <string name="text_in_use_by_the_sound_server_or_another_app_aa3eaa" formatted="false">"Sedang dipakai server suara atau aplikasi lain"</string>
+    <string name="text_keep_aurora_playing_in_the_notification_area_when_the_window_clos_e5fed5" formatted="false">"Biarkan Aurora tetap memutar di area notifikasi saat jendela ditutup"</string>
+    <string name="text_larger_buffers_ride_out_heavy_system_load_smaller_ones_react_fast_e4d5f8" formatted="false">"Buffer lebih besar tahan terhadap beban sistem berat; buffer lebih kecil lebih cepat merespons penggeseran dan volume. Berlaku saat output dibuka ulang."</string>
+    <string name="text_let_your_desktop_show_through_the_window_blurred_windows_11_only_08f192" formatted="false">"Tampilkan desktop melalui jendela dengan efek buram. Hanya Windows 11."</string>
+    <string name="text_linux_java_b7923f">"Linux · Java %1$d"</string>
+    <string name="text_macos_java_4c1e2a">"macOS · Java %1$d"</string>
+    <string name="text_logs_126dd3" formatted="false">"Log"</string>
+    <string name="text_mica_3ccf84" formatted="false">"Mica"</string>
+    <string name="text_open_in_full_page_0ec923" formatted="false">"Buka di halaman penuh"</string>
+    <string name="text_output_buffer_61b372" formatted="false">"Buffer output"</string>
+    <string name="text_panel_frost_ada0d3" formatted="false">"Efek buram panel"</string>
+    <string name="text_playing_music_af9695" formatted="false">"Memutar musik"</string>
+    <string name="text_shared_mode_mix_format_4a5bc8" formatted="false">"Format mix mode bersama"</string>
+    <string name="text_shared_mode_mixes_aurora_with_other_apps_through_the_system_sound_0c8e9d" formatted="false">"Mode bersama mencampur Aurora dengan aplikasi lain melalui server suara sistem pada 48 kHz. Aktifkan mode eksklusif untuk pemutaran bit-perfect."</string>
+    <string name="text_shared_mode_mixes_aurora_with_other_apps_through_the_system_sound_ad2dd3" formatted="false">"Mode bersama mencampur Aurora dengan aplikasi lain melalui server suara sistem pada 48 kHz."</string>
+    <string name="text_shared_mode_mixes_aurora_with_other_apps_through_the_windows_audi_a3c865" formatted="false">"Mode bersama mencampur Aurora dengan aplikasi lain melalui mesin audio Windows dalam format mix perangkat. Aktifkan mode eksklusif untuk pemutaran bit-perfect."</string>
+    <string name="text_system_default_follows_the_default_output_device_even_when_it_cha_2bff98" formatted="false">"Default sistem mengikuti perangkat output default, bahkan jika berubah saat pemutaran."</string>
+    <string name="text_system_default_follows_the_windows_output_device_even_when_it_cha_5703e0" formatted="false">"Default sistem mengikuti perangkat output Windows, bahkan jika berubah saat pemutaran."</string>
+    <string name="text_the_audio_output_could_not_be_used_2b7767" formatted="false">"Output audio tidak dapat digunakan"</string>
+    <string name="text_the_device_is_in_use_by_the_sound_server_or_another_app_ask_pipew_e1e816" formatted="false">"Perangkat sedang dipakai server suara atau aplikasi lain. Minta PipeWire atau PulseAudio melepaskannya, lalu matikan dan nyalakan lagi mode eksklusif."</string>
+    <string name="text_the_sample_rate_policy_and_dither_apply_in_exclusive_mode_shared_219b9f" formatted="false">"Kebijakan laju sampel dan dither berlaku di mode eksklusif. Mode bersama selalu memutar pada 48 kHz melalui server suara."</string>
+    <string name="text_the_sample_rate_policy_and_dither_apply_in_exclusive_mode_shared_caca2d" formatted="false">"Kebijakan laju sampel dan dither berlaku di mode eksklusif. Mode bersama selalu memutar dalam format mix Windows."</string>
+    <string name="text_the_selected_output_device_was_disconnected_00e44e" formatted="false">"Perangkat output yang dipilih terputus"</string>
+    <string name="text_the_track_could_not_be_decoded_3a23e8" formatted="false">"Lagu tidak dapat didekode"</string>
+    <string name="text_the_track_could_not_be_opened_5719af" formatted="false">"Lagu tidak dapat dibuka"</string>
+    <string name="text_the_track_s_sample_rate_is_not_supported_5c8629" formatted="false">"Laju sampel lagu tidak didukung"</string>
+    <string name="text_tint_the_whole_app_with_the_playing_song_s_cover_a83c17" formatted="false">"Warnai seluruh aplikasi dengan warna lagu yang sedang diputar"</string>
+    <string name="text_translucent_window_d865c7" formatted="false">"Jendela tembus pandang"</string>
+    <string name="text_using_your_system_accent_colour_89502e" formatted="false">"Memakai warna aksen sistem-mu."</string>
+    <string name="text_using_your_windows_accent_colour_7d4b4a" formatted="false">"Memakai warna aksen Windows-mu."</string>
+    <string name="text_volume_3b18e8" formatted="false">"Volume"</string>
+    <string name="text_windows_capabilities_0f1fa0" formatted="false">"Kemampuan Windows"</string>
+    <string name="text_windows_java_2566af">"Windows · Java %1$d"</string>
+    <string name="update_desktop_install_failed" formatted="false">"Tidak dapat memulai penginstal. Anda juga dapat mengunduh pembaruan dari GitHub."</string>
+    <string name="update_desktop_install_note" formatted="false">"Aurora ditutup selama penginstal berjalan. Buka lagi setelah penyiapan selesai."</string>
+    <string name="youtube_download_open_folder" formatted="false">"Buka folder unduhan"</string>
+    <string name="player_fullscreen" formatted="false">"Layar penuh"</string>
+    <string name="player_exit_fullscreen" formatted="false">"Keluar dari layar penuh"</string>
+    <string name="window_minimize" formatted="false">"Minimalkan"</string>
+    <string name="window_maximize" formatted="false">"Maksimalkan"</string>
+    <string name="window_restore" formatted="false">"Pulihkan"</string>
+    <string name="window_system_title_bar" formatted="false">"Bilah judul sistem"</string>
+    <string name="window_system_title_bar_summary" formatted="false">"Gunakan bingkai jendela desktop Anda, bukan milik Aurora. Berlaku setelah Aurora dimulai ulang."</string>
+    <string name="discord_not_running_desktop" formatted="false">"Discord tidak berjalan"</string>
+    <string name="discord_without_app_desktop" formatted="false">"Tanpa aplikasi Discord"</string>
+    <string name="discord_without_app_summary_desktop" formatted="false">"Hanya diperlukan jika aplikasi Discord tidak berjalan di komputer ini"</string>
+</resources>

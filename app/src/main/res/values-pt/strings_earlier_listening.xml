@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="earlier_listening_add">"Adicionar tempo de audição de antes do YORU"</string>
+    <string name="earlier_listening_included">"Inclui %1$s de antes do YORU · %2$s no YORU"</string>
+    <string name="earlier_listening_title">"Tempo de audição de antes do YORU"</string>
+    <string name="earlier_listening_body">"Soma apenas aos seus minutos totais. Não cria reproduções, artistas nem datas."</string>
+    <string name="earlier_listening_hours">"Horas"</string>
+</resources>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="soundcloud_card_detail">"I tuoi Mi piace, playlist e feed"</string>
+    <string name="soundcloud_connect_title">"Collega SoundCloud"</string>
+    <string name="soundcloud_connect_subtitle">"I tuoi Mi piace, le playlist e gli artisti che segui"</string>
+    <string name="soundcloud_sign_in">"Accedi a SoundCloud"</string>
+    <string name="soundcloud_sign_in_hint">"Accedi dalla pagina di SoundCloud. YORU si collega appena hai effettuato l\'accesso."</string>
+    <string name="soundcloud_waiting">"Accedi per continuare. Se qui l\'accesso con Google viene rifiutato, usa la tua email."</string>
+    <string name="soundcloud_details">"YORU usa l\'interfaccia web non ufficiale di SoundCloud e conserva l\'accesso cifrato su questo dispositivo."</string>
+    <string name="soundcloud_connect_failed">"Impossibile collegare SoundCloud. Riprova."</string>
+    <string name="soundcloud_page_failed">"Impossibile caricare la pagina di accesso. Controlla la connessione e ricarica."</string>
+    <string name="soundcloud_captcha_hint">"SoundCloud vuole verificare che tu sia umano prima di salvare questa modifica. Risolvila una volta e YORU completerà la modifica."</string>
+    <string name="player_comments">"Commenti"</string>
+    <string name="player_soundcloud_comments">"Commenti di SoundCloud"</string>
+    <string name="comments_empty">"Ancora nessun commento. Sii il primo."</string>
+    <string name="comments_none">"Ancora nessun commento qui"</string>
+    <string name="comment_hint_untimed">"Aggiungi un commento…"</string>
+    <string name="comment_like_failed">"Impossibile aggiornare il Mi piace. Riprova."</string>
+    <string name="comment_hint">"Commenta a %1$s"</string>
+    <string name="comment_post">"Pubblica"</string>
+    <string name="comment_failed">"Impossibile pubblicare il commento. Riprova."</string>
+    <string name="soundcloud_verify">"Verifica SoundCloud"</string>
+    <string name="soundcloud_verify_detail">"Invia i Mi piace e i follow in attesa. SoundCloud potrebbe prima chiederti di dimostrare che sei umano."</string>
+    <string name="soundcloud_verify_done">"SoundCloud è aggiornato."</string>
+    <string name="soundcloud_verify_failed">"SoundCloud deve ancora verificarti. Riprova."</string>
+    <string name="soundcloud_verify_waiting">"In attesa: %1$d"</string>
+    <string name="comment_needs_verify">"SoundCloud vuole verificare che tu sia umano. Vai su Impostazioni → Account e scegli Verifica SoundCloud."</string>
+</resources>

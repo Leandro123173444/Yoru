@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="soundcloud_card_detail">"إعجاباتك وقوائم التشغيل والخلاصة"</string>
+    <string name="soundcloud_connect_title">"ربط SoundCloud"</string>
+    <string name="soundcloud_connect_subtitle">"إعجاباتك وقوائم التشغيل والفنانون الذين تتابعهم"</string>
+    <string name="soundcloud_sign_in">"تسجيل الدخول إلى SoundCloud"</string>
+    <string name="soundcloud_sign_in_hint">"سجّل الدخول من صفحة SoundCloud. يتصل YORU فور تسجيل دخولك."</string>
+    <string name="soundcloud_waiting">"سجّل الدخول للمتابعة. إذا رُفض تسجيل الدخول عبر Google هنا، فسجّل الدخول ببريدك الإلكتروني."</string>
+    <string name="soundcloud_details">"يستخدم YORU واجهة الويب غير الرسمية لـ SoundCloud ويحفظ تسجيل دخولك مشفّرًا على هذا الجهاز."</string>
+    <string name="soundcloud_connect_failed">"تعذّر ربط SoundCloud. حاول مرة أخرى."</string>
+    <string name="soundcloud_page_failed">"تعذّر تحميل صفحة تسجيل الدخول. تحقّق من اتصالك وأعد التحميل."</string>
+    <string name="soundcloud_captcha_hint">"يريد SoundCloud التحقق من أنك إنسان قبل حفظ هذا التغيير. أكمل التحقق مرة واحدة وسيُكمل YORU التغيير."</string>
+    <string name="player_comments">"التعليقات"</string>
+    <string name="player_soundcloud_comments">"تعليقات SoundCloud"</string>
+    <string name="comments_empty">"لا توجد تعليقات بعد. كن أول من يعلّق."</string>
+    <string name="comments_none">"لا توجد تعليقات هنا بعد"</string>
+    <string name="comment_hint_untimed">"أضف تعليقًا…"</string>
+    <string name="comment_like_failed">"تعذّر تحديث الإعجاب. حاول مرة أخرى."</string>
+    <string name="comment_hint">"تعليق عند %1$s"</string>
+    <string name="comment_post">"نشر"</string>
+    <string name="comment_failed">"تعذّر نشر تعليقك. حاول مرة أخرى."</string>
+    <string name="soundcloud_verify">"التحقق من SoundCloud"</string>
+    <string name="soundcloud_verify_detail">"أرسل الإعجابات والمتابعات المنتظرة. قد يطلب منك SoundCloud أولاً إثبات أنك إنسان."</string>
+    <string name="soundcloud_verify_done">"SoundCloud محدّث."</string>
+    <string name="soundcloud_verify_failed">"لا يزال SoundCloud بحاجة إلى التحقق منك. حاول مرة أخرى."</string>
+    <string name="soundcloud_verify_waiting">"قيد الانتظار: %1$d"</string>
+    <string name="comment_needs_verify">"يريد SoundCloud التحقق من أنك إنسان. انتقل إلى الإعدادات ← الحسابات واختر التحقق من SoundCloud."</string>
+</resources>

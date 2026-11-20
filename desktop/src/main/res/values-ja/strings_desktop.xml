@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chromium_downloading" formatted="false">"サインイン用ブラウザをダウンロードしています。初回のみで、約 150 MB です。"</string>
+    <string name="chromium_failed" formatted="false">"サインイン用ブラウザを起動できませんでした: %1$s"</string>
+    <string name="chromium_preparing" formatted="false">"サインイン用ブラウザを準備しています…"</string>
+    <string name="insights_location_history_guide_desktop" formatted="false">"各再生は再生された正確な場所を保存し、地図で確認できます。データはこのコンピューターにのみ保存され、アップロードされることはなく、バックアップにも含まれません。ここまたは地図からいつでも削除できます。"</string>
+    <string name="insights_places_guide_desktop" formatted="false">"音楽の再生中、Aurora は最大 10 分に 1 回位置を確認し、自宅と職場と比べてラベルだけを残します。自宅と職場の位置そのものはこのコンピューターにのみ保存され、どのバックアップにも含まれません。"</string>
+    <string name="insights_step_private_title_desktop" formatted="false">"データはこのコンピューターの中だけ"</string>
+    <string name="levels_desktop_exclusive_needed" formatted="false">"キャリブレーションするには排他出力で再生を開始してください。"</string>
+    <string name="levels_desktop_hardware_help" formatted="false">"0=dB を入力：最大出力に対する DAC の現在のハードウェア音量。"</string>
+    <string name="levels_desktop_hardware_points" formatted="false">"ハードウェア音量の減衰"</string>
+    <string name="levels_desktop_volume" formatted="false">"Aurora 自体の音量は直接測定されます。DAC の現在のハードウェア音量でキャリブレーションしてください。"</string>
+    <string name="location_linux_off" formatted="false">"Aurora の位置情報へのアクセスがオフになっています。デスクトップのプライバシー設定で位置情報サービスをオンにして Aurora を許可してから、もう一度お試しください。"</string>
+    <string name="location_open_windows_settings" formatted="false">"位置情報の設定を開く"</string>
+    <string name="location_unsupported" formatted="false">"このシステムでは位置情報を利用できません。"</string>
+    <string name="location_windows_off" formatted="false">"Windows がデスクトップアプリの位置情報をブロックしています。デスクトップアプリを含めて位置情報へのアクセスをオンにしてから、もう一度お試しください。"</string>
+    <string name="lyrics_settings_summary_desktop" formatted="false">"同期スタイルと歌詞の取得元"</string>
+    <string name="lyrics_source_lrclib_detail" formatted="false">"無料のコミュニティ歌詞データベース"</string>
+    <string name="lyrics_source_server" formatted="false">"曲の取得元"</string>
+    <string name="lyrics_source_server_detail" formatted="false">"サーバー、ストリーミングサービス、またはファイル自体の歌詞"</string>
+    <string name="lyrics_source_spotify_detail" formatted="false">"統合した Spotify アカウントの同期歌詞"</string>
+    <string name="lyrics_sources_hint" formatted="false">"Aurora はこの順に確認します。最初に見つかった同期歌詞を使い、なければ最初に見つかった歌詞を使います。"</string>
+    <string name="lyrics_sources_title_desktop" formatted="false">"歌詞の取得元"</string>
+    <string name="merge_comments_desktop" formatted="false">"SoundCloud のコメント"</string>
+    <string name="merge_comments_summary_desktop" formatted="false">"一致する SoundCloud のトラックが見つかったとき、タイムスタンプ付きコメントを表示します"</string>
+    <string name="merge_lyrics_desktop" formatted="false">"Spotify の歌詞"</string>
+    <string name="merge_lyrics_summary_desktop" formatted="false">"他のソースの曲にも Spotify の同期歌詞を使います"</string>
+    <string name="merge_options_desktop" formatted="false">"統合オプション"</string>
+    <string name="merge_options_note" formatted="false">"SoundCloud や Spotify を統合ライブラリに含めると、Aurora はそれらの追加機能を他のソースの曲にも反映できます。各機能はまとめて、またはソースごとにオフにできます。"</string>
+    <string name="merge_options_summary_desktop" formatted="false">"統合したサービスが曲に追加するもの"</string>
+    <string name="merge_songs_from" formatted="false">"曲のソース"</string>
+    <string name="playlist_save_to_desktop" formatted="false">"保存先"</string>
+    <string name="shortcut_seek_back" formatted="false">"巻き戻し"</string>
+    <string name="shortcut_seek_forward" formatted="false">"早送り"</string>
+    <string name="shortcut_show_list" formatted="false">"ショートカットを表示"</string>
+    <string name="shortcut_volume_down" formatted="false">"音量を下げる"</string>
+    <string name="shortcut_volume_up" formatted="false">"音量を上げる"</string>
+    <string name="shortcuts_title" formatted="false">"キーボードショートカット"</string>
+    <string name="storage_youtube_desktop_note" formatted="false">"YouTube からのダウンロードはユーザーフォルダー内の Music/Aurora に保存され、音楽フォルダーに追加されます。"</string>
+    <string name="tag_edit_desktop_note" formatted="false">"タグを書き込むとこのコンピューター上のファイルが変更されます。先に他のアプリで閉じてください。"</string>
+    <string name="text_acrylic_f39ce1" formatted="false">"アクリル"</string>
+    <string name="text_add_music_folder_a083d8" formatted="false">"音楽フォルダを追加"</string>
+    <string name="text_audio_decoding_copyright_the_ffmpeg_developers_lgpl_3_0_or_later_6338f2" formatted="false">"音声デコード。Copyright © FFmpeg developers。LGPL-3.0-or-later、JavaCPP Presets を通じて動的リンク。ライセンス全文：https://www.gnu.org/licenses/lgpl-3.0.html"</string>
+    <string name="text_aurora_s_volume_sets_the_dac_s_own_volume_when_it_has_one_the_audi_371db5" formatted="false">"DAC に本体の音量調整がある場合、Aurora の音量でそれを調整します。音声は bit-perfect のままです。"</string>
+    <string name="text_aurora_takes_sole_control_of_the_device_and_sends_samples_at_the_cfbce6" formatted="false">"Aurora はデバイスを占有し、曲本来のサンプルレートとビット深度でサンプルを送信します。Aurora の再生中、他のアプリは無音になります。処理、音量、ReplayGain がサンプルを変更しない場合、出力はビットパーフェクトのままです。デバイスが形式を拒否した場合、Aurora は共有モードに戻り、信号経路に理由が表示されます。"</string>
+    <string name="text_background_tint_a39a12" formatted="false">"背景の色合い"</string>
+    <string name="text_bit_float_012895">"%1$d ビット浮動小数点"</string>
+    <string name="text_bit_integer_72520f">"%1$d ビット整数"</string>
+    <string name="text_bit_perfect_output_that_bypasses_the_sound_server_d2dcd9" formatted="false">"サウンドサーバーをバイパスするビットパーフェクト出力"</string>
+    <string name="text_bit_perfect_output_that_bypasses_the_windows_mixer_eff21d" formatted="false">"Windows ミキサーをバイパスするビットパーフェクト出力"</string>
+    <string name="text_built_with_compose_multiplatform_material_3_389c3a" formatted="false">"Compose Multiplatform と Material 3 で開発。"</string>
+    <string name="text_cache_50338b" formatted="false">"キャッシュ"</string>
+    <string name="text_cannot_resize_this_image_be7b26" formatted="false">"この画像のサイズを変更できません。"</string>
+    <string name="text_ch_282ab4">"%1$d ch"</string>
+    <string name="text_choose_a_supported_image_under_100_megapixels_af6c16" formatted="false">"1 億画素未満の対応画像を選んでください。"</string>
+    <string name="text_choose_an_image_smaller_than_20_mb_cc7669" formatted="false">"20 MB 未満の画像を選んでください。"</string>
+    <string name="text_choose_an_output_device_to_use_exclusive_mode_b2a25d" formatted="false">"排他モードを使うには出力デバイスを選んでください"</string>
+    <string name="text_choose_where_your_music_lives_on_this_pc_876bd8" formatted="false">"この PC で音楽を保存している場所を選択"</string>
+    <string name="text_clear_image_cache_ff7b31" formatted="false">"画像キャッシュを消去"</string>
+    <string name="text_close_to_tray_f91cc6" formatted="false">"閉じるときにトレイに格納"</string>
+    <string name="text_date_added_56ab7a" formatted="false">"追加日"</string>
+    <string name="text_device_capabilities_4cac01" formatted="false">"デバイスの機能"</string>
+    <string name="text_device_exclusive_mode_and_buffer_f2337c" formatted="false">"デバイス、排他モード、バッファ"</string>
+    <string name="text_exclusive_formats_3dafa8" formatted="false">"排他モードの形式"</string>
+    <string name="text_exclusive_mode_01d9b2" formatted="false">"排他モード"</string>
+    <string name="text_exclusive_mode_is_unavailable_0de552">"排他モードを利用できません：%1$s"</string>
+    <string name="text_exclusive_mode_is_unavailable_on_this_device_e51016" formatted="false">"このデバイスでは排他モードを利用できません"</string>
+    <string name="text_follow_the_playing_cover_5d2e91" formatted="false">"再生中のカバーに合わせる"</string>
+    <string name="text_glass_edges_f462cd" formatted="false">"ガラスの縁"</string>
+    <string name="text_hz_is_unavailable_using_hz_14de1c">"%1$d Hz は利用できないため、%2$d Hz を使用します。"</string>
+    <string name="text_in_use_by_the_sound_server_or_another_app_aa3eaa" formatted="false">"サウンドサーバーまたは他のアプリが使用中"</string>
+    <string name="text_keep_aurora_playing_in_the_notification_area_when_the_window_clos_e5fed5" formatted="false">"ウィンドウを閉じても通知領域で Aurora の再生を続ける"</string>
+    <string name="text_larger_buffers_ride_out_heavy_system_load_smaller_ones_react_fast_e4d5f8" formatted="false">"大きいバッファはシステム負荷が高いときに強く、小さいバッファはシークや音量の操作に素早く反応します。出力を開き直したときに適用されます。"</string>
+    <string name="text_let_your_desktop_show_through_the_window_blurred_windows_11_only_08f192" formatted="false">"ウィンドウ越しにデスクトップをぼかして表示します。Windows 11 のみ。"</string>
+    <string name="text_linux_java_b7923f">"Linux · Java %1$d"</string>
+    <string name="text_macos_java_4c1e2a">"macOS · Java %1$d"</string>
+    <string name="text_logs_126dd3" formatted="false">"ログ"</string>
+    <string name="text_mica_3ccf84" formatted="false">"マイカ"</string>
+    <string name="text_open_in_full_page_0ec923" formatted="false">"全画面ページで開く"</string>
+    <string name="text_output_buffer_61b372" formatted="false">"出力バッファ"</string>
+    <string name="text_panel_frost_ada0d3" formatted="false">"パネルのすりガラス"</string>
+    <string name="text_playing_music_af9695" formatted="false">"音楽を再生中"</string>
+    <string name="text_shared_mode_mix_format_4a5bc8" formatted="false">"共有モードのミックス形式"</string>
+    <string name="text_shared_mode_mixes_aurora_with_other_apps_through_the_system_sound_0c8e9d" formatted="false">"共有モードでは、システムのサウンドサーバーを通じて 48 kHz で Aurora と他のアプリをミックスします。ビットパーフェクト再生には排他モードをオンにしてください。"</string>
+    <string name="text_shared_mode_mixes_aurora_with_other_apps_through_the_system_sound_ad2dd3" formatted="false">"共有モードでは、システムのサウンドサーバーを通じて 48 kHz で Aurora と他のアプリをミックスします。"</string>
+    <string name="text_shared_mode_mixes_aurora_with_other_apps_through_the_windows_audi_a3c865" formatted="false">"共有モードでは、Windows オーディオエンジンを通じてデバイスのミックス形式で Aurora と他のアプリをミックスします。ビットパーフェクト再生には排他モードをオンにしてください。"</string>
+    <string name="text_system_default_follows_the_default_output_device_even_when_it_cha_2bff98" formatted="false">"システムのデフォルトは、再生中に変わった場合も含めて既定の出力デバイスに従います。"</string>
+    <string name="text_system_default_follows_the_windows_output_device_even_when_it_cha_5703e0" formatted="false">"システムのデフォルトは、再生中に変わった場合も含めて Windows の出力デバイスに従います。"</string>
+    <string name="text_the_audio_output_could_not_be_used_2b7767" formatted="false">"オーディオ出力を使用できませんでした"</string>
+    <string name="text_the_device_is_in_use_by_the_sound_server_or_another_app_ask_pipew_e1e816" formatted="false">"デバイスはサウンドサーバーまたは他のアプリが使用中です。PipeWire または PulseAudio にデバイスを解放させてから、排他モードをオフにして再度オンにしてください。"</string>
+    <string name="text_the_sample_rate_policy_and_dither_apply_in_exclusive_mode_shared_219b9f" formatted="false">"サンプルレートのポリシーとディザは排他モードで適用されます。共有モードでは常にサウンドサーバーを通じて 48 kHz で再生されます。"</string>
+    <string name="text_the_sample_rate_policy_and_dither_apply_in_exclusive_mode_shared_caca2d" formatted="false">"サンプルレートのポリシーとディザは排他モードで適用されます。共有モードでは常に Windows のミックス形式で再生されます。"</string>
+    <string name="text_the_selected_output_device_was_disconnected_00e44e" formatted="false">"選択した出力デバイスの接続が切れました"</string>
+    <string name="text_the_track_could_not_be_decoded_3a23e8" formatted="false">"曲をデコードできませんでした"</string>
+    <string name="text_the_track_could_not_be_opened_5719af" formatted="false">"曲を開けませんでした"</string>
+    <string name="text_the_track_s_sample_rate_is_not_supported_5c8629" formatted="false">"曲のサンプルレートには対応していません"</string>
+    <string name="text_tint_the_whole_app_with_the_playing_song_s_cover_a83c17" formatted="false">"再生中の曲の色でアプリ全体を色付け"</string>
+    <string name="text_translucent_window_d865c7" formatted="false">"半透明ウィンドウ"</string>
+    <string name="text_using_your_system_accent_colour_89502e" formatted="false">"システムのアクセントカラーを使用しています。"</string>
+    <string name="text_using_your_windows_accent_colour_7d4b4a" formatted="false">"Windows のアクセントカラーを使用しています。"</string>
+    <string name="text_volume_3b18e8" formatted="false">"音量"</string>
+    <string name="text_windows_capabilities_0f1fa0" formatted="false">"Windows の機能"</string>
+    <string name="text_windows_java_2566af">"Windows · Java %1$d"</string>
+    <string name="update_desktop_install_failed" formatted="false">"インストーラーを起動できませんでした。アップデートは GitHub からもダウンロードできます。"</string>
+    <string name="update_desktop_install_note" formatted="false">"インストーラーの実行中は Aurora が終了します。セットアップが完了したら再度開いてください。"</string>
+    <string name="youtube_download_open_folder" formatted="false">"ダウンロードフォルダーを開く"</string>
+    <string name="player_fullscreen" formatted="false">"全画面表示"</string>
+    <string name="player_exit_fullscreen" formatted="false">"全画面表示を終了"</string>
+    <string name="window_minimize" formatted="false">"最小化"</string>
+    <string name="window_maximize" formatted="false">"最大化"</string>
+    <string name="window_restore" formatted="false">"元に戻す"</string>
+    <string name="window_system_title_bar" formatted="false">"システムのタイトルバー"</string>
+    <string name="window_system_title_bar_summary" formatted="false">"Aurora の代わりにデスクトップ標準のウィンドウ枠を使います。Aurora の再起動後に適用されます。"</string>
+    <string name="discord_not_running_desktop" formatted="false">"Discord が起動していません"</string>
+    <string name="discord_without_app_desktop" formatted="false">"Discord アプリを使わない場合"</string>
+    <string name="discord_without_app_summary_desktop" formatted="false">"このコンピューターで Discord アプリが起動していない場合にのみ必要です"</string>
+</resources>

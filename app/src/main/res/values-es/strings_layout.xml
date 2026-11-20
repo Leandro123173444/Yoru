@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="layout_classic">"Clásico"</string>
+    <string name="layout_spotlight">"Spotlight"</string>
+    <string name="layout_console">"Consola"</string>
+    <string name="layout_drift">"Drift"</string>
+    <string name="layout_hint">"Cómo se organizan Inicio y Biblioteca. Clásico es el original."</string>
+    <string name="bars_title">"Barras"</string>
+    <string name="bars_hint">"El minirreproductor y la barra de navegación. Clásico es el original."</string>
+    <string name="bars_match_title">"Igual que el diseño"</string>
+    <string name="bars_match_hint">"Las barras siguen el diseño elegido arriba."</string>
+    <string name="search_top_result">"Resultado principal"</string>
+    <string name="search_own_title">"Diseño propio para la búsqueda"</string>
+    <string name="search_own_hint">"La búsqueda tiene su propio diseño en lugar de seguir Inicio y Biblioteca."</string>
+</resources>

@@ -1,0 +1,461 @@
+package com.aurora.music.ui.components
+
+import com.aurora.music.ui.theme.likePop
+import com.aurora.music.data.LongForm
+import com.aurora.music.ui.theme.paperClip
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Lyrics
+import androidx.compose.material.icons.filled.OpenInFull
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.RepeatOne
+import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.filled.Replay10
+import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.AllInclusive
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.Speaker
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import com.aurora.music.R
+import com.aurora.music.data.MiniProgress
+import com.aurora.music.data.MiniStyle
+import com.aurora.music.data.ThemeStyle
+import com.aurora.music.desktop.player.PlayerUiState
+import com.aurora.music.desktop.player.RepeatMode
+import com.aurora.music.localization.appString
+import com.aurora.music.model.accent
+import com.aurora.music.ui.screens.player.PlayerPane
+import com.aurora.music.ui.screens.player.volumeIcon
+import com.aurora.music.ui.theme.LocalUiPrefs
+import com.aurora.music.ui.theme.glassSheen
+import com.aurora.music.ui.theme.LocalGlass
+import com.aurora.music.ui.theme.auroraPanel
+import com.aurora.music.ui.theme.glassEdge
+import kotlinx.coroutines.delay
+import kotlin.math.abs
+import kotlin.math.roundToInt
+import com.aurora.music.ui.theme.themedCorner
+
+internal val DockButton = 48.dp
+private const val DockCenterShare = 1.4f / 3.4f
+
+@Composable
+fun PlaybackDock(
+    djMode: Boolean = false,
+    state: PlayerUiState,
+    openPane: PlayerPane?,
+    volume: Float,
+    onExpand: () -> Unit,
+    onTogglePlay: () -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onSeek: (Float) -> Unit,
+    onToggleLike: () -> Unit,
+    onToggleShuffle: () -> Unit,
+    onCycleRepeat: () -> Unit,
+    onVolumeChange: (Float) -> Unit,
+    onToggleMute: () -> Unit,
+    onOpenOutput: () -> Unit,
+    onPane: (PlayerPane) -> Unit,
+    modifier: Modifier = Modifier,
+    onOpenArtist: (() -> Unit)? = null,
+    surface: Modifier? = null,
+    play: Color = MaterialTheme.colorScheme.primary,
+    onPlay: Color = MaterialTheme.colorScheme.onPrimary,
+    playShape: Shape = IconButtonDefaults.filledShape,
+) {
+    val song = state.current
+    val ui = LocalUiPrefs.current
+    val classic = ui.themeStyle == ThemeStyle.AURORA
+    val colors = MaterialTheme.colorScheme
+    val scale = ui.tabletDockScale
+    val compact = ui.miniStyle == MiniStyle.COMPACT
+    val prominent = ui.miniStyle == MiniStyle.PROMINENT
+    BoxWithConstraints(
+        modifier
+            .fillMaxWidth()
+            .then(
+                surface ?: if (classic && LocalGlass.current) Modifier.paperClip(RoundedCornerShape(themedCorner(22.dp))).background(glassSheen())
+                    .glassEdge(RoundedCornerShape(themedCorner(22.dp)))
+                else if (classic) Modifier.paperClip(RoundedCornerShape(themedCorner(22.dp))).background(
+                    Brush.horizontalGradient(listOf(colors.surfaceContainerHigh, lerp(colors.surfaceContainerHigh, colors.primary, 0.14f)))
+                ) else Modifier.auroraPanel(MaterialTheme.shapes.extraLarge, emphasized = true)
+            ),
+    ) {
+        val roomy = maxWidth >= 760.dp
+        val showExpand = maxWidth >= 1400.dp
+        val volumeWidth = if (maxWidth >= 1100.dp) 140.dp else 104.dp
+        val trailing = DockButton * (if (roomy) 4 else 2) + (if (roomy) volumeWidth else 0.dp) + (if (showExpand) DockButton else 0.dp)
+        val inner = maxWidth - 32.dp
+        val center = (inner * DockCenterShare).coerceAtMost(680.dp)
+        val side = if (roomy) maxOf((inner - center) / 2, trailing) else trailing
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = (if (compact) 68.dp else if (prominent) 100.dp else 84.dp) * scale).padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                DockTrack(state, onExpand, onOpenArtist, Modifier.weight(1f, fill = false)) {
+                    val art = when (ui.miniStyle) {
+                        MiniStyle.COMPACT -> if (roomy) 46.dp else 42.dp
+                        MiniStyle.PROMINENT -> if (roomy) 78.dp else 66.dp
+                        else -> if (roomy) 62.dp else 54.dp
+                    }
+                    Artwork(song.artworkUrl, song.accent, Modifier.size(art * scale), corner = 10.dp)
+                }
+                if (!compact) DockLike(state, onToggleLike)
+            }
+            Spacer(Modifier.width(8.dp))
+            Column(Modifier.width(center), horizontalAlignment = Alignment.CenterHorizontally) {
+                DockTransport(djMode, state, onTogglePlay, onPrevious, onNext, onSeek, onToggleShuffle, onCycleRepeat, play = play, onPlay = onPlay, playShape = playShape)
+                if (ui.miniProgress != MiniProgress.NONE) DockSeek(state, onSeek, showTimes = roomy, thick = ui.miniProgress == MiniProgress.BAR)
+            }
+            Spacer(Modifier.width(8.dp))
+            Row(Modifier.width(side), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                PaneToggle(PlayerPane.LYRICS, Icons.Filled.Lyrics, openPane == PlayerPane.LYRICS) { onPane(PlayerPane.LYRICS) }
+                if (!djMode) PaneToggle(PlayerPane.QUEUE, Icons.AutoMirrored.Filled.QueueMusic, openPane == PlayerPane.QUEUE) { onPane(PlayerPane.QUEUE) }
+                if (roomy) IconButton(onClick = onOpenOutput) {
+                    Icon(Icons.Filled.Speaker, appString(R.string.text_output_device_709178), tint = colors.onSurfaceVariant)
+                }
+                if (roomy) VolumeControl(volume, onVolumeChange, onToggleMute, volumeWidth)
+                if (showExpand) IconButton(onClick = onExpand) {
+                    Icon(Icons.Filled.OpenInFull, appString(R.string.tablet_open_now_playing), tint = colors.onSurfaceVariant)
+                }
+            }
+        }
+    }
+}
+
+private fun skipBy(state: PlayerUiState, seconds: Int, onSeek: (Float) -> Unit) {
+    if (state.durationSec > 0) onSeek(((state.positionSec + seconds) / state.durationSec).coerceIn(0f, 1f))
+}
+
+@Composable
+internal fun DockTrack(
+    state: PlayerUiState,
+    onExpand: () -> Unit,
+    onOpenArtist: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(themedCorner(14.dp)),
+    art: @Composable () -> Unit,
+) {
+    val song = state.current
+    Row(
+        modifier.paperClip(shape)
+            .clickable(onClickLabel = appString(R.string.tablet_open_now_playing), onClick = onExpand)
+            .pointerHoverIcon(PointerIcon.Hand)
+            .padding(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        art()
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f, fill = false)) {
+            MarqueeText(song.title, if (LocalUiPrefs.current.miniStyle == MiniStyle.PROMINENT) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleSmall,
+                MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+            DockArtist(song.artist, if (song.artistId.isNotBlank()) onOpenArtist else null)
+        }
+    }
+}
+
+@Composable
+internal fun DockLike(state: PlayerUiState, onToggleLike: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val song = state.current
+    val likeTint by animateColorAsState(if (state.isCurrentLiked) colors.primary else colors.onSurfaceVariant, label = "dockLike")
+    if (LocalCanLike.current(song.id)) LikeHeart(song, onToggleLike, Modifier.size(48.dp).paperClip(CircleShape)) {
+        Icon(if (state.isCurrentLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+            appString(R.string.text_like_c7e02c), tint = likeTint, modifier = Modifier.size(22.dp).likePop(state.isCurrentLiked, song.id))
+    }
+}
+
+@Composable
+internal fun DockShuffle(state: PlayerUiState, onToggleShuffle: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    IconButton(onClick = onToggleShuffle) {
+        Icon(if (state.smartShuffle) Icons.Filled.AllInclusive else Icons.Filled.Shuffle,
+            appString(if (state.smartShuffle) R.string.shuffle_autoplay else R.string.text_shuffle_5b772b), modifier = Modifier.size(20.dp),
+            tint = if (state.shuffle) colors.primary else colors.onSurfaceVariant)
+    }
+}
+
+@Composable
+internal fun DockRepeat(state: PlayerUiState, onCycleRepeat: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    IconButton(onClick = onCycleRepeat) {
+        Icon(if (state.repeat == RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
+            appString(R.string.text_repeat_659eba), modifier = Modifier.size(20.dp),
+            tint = if (state.repeat != RepeatMode.OFF) colors.primary else colors.onSurfaceVariant)
+    }
+}
+
+// modes off leaves shuffle and repeat to the caller; the long-form skips stay either way
+@Composable
+internal fun DockTransport(
+    djMode: Boolean,
+    state: PlayerUiState,
+    onTogglePlay: () -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onSeek: (Float) -> Unit,
+    onToggleShuffle: () -> Unit,
+    onCycleRepeat: () -> Unit,
+    modes: Boolean = true,
+    play: Color = MaterialTheme.colorScheme.primary,
+    onPlay: Color = MaterialTheme.colorScheme.onPrimary,
+    playShape: Shape = IconButtonDefaults.filledShape,
+) {
+    val colors = MaterialTheme.colorScheme
+    val scale = LocalUiPrefs.current.tabletDockScale
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (state.skipButtons) IconButton(onClick = { skipBy(state, -LongForm.SKIP_SEC, onSeek) }) {
+            Icon(Icons.Filled.Replay10, appString(R.string.skip_back_seconds, LongForm.SKIP_SEC), modifier = Modifier.size(22.dp), tint = colors.onSurface)
+        } else if (modes && !djMode) DockShuffle(state, onToggleShuffle)
+        IconButton(onClick = onPrevious) {
+            Icon(Icons.Filled.SkipPrevious, appString(R.string.text_previous_50f942), tint = colors.onSurface)
+        }
+        FilledIconButton(
+            onClick = onTogglePlay,
+            modifier = Modifier.size((48.dp * scale).coerceAtLeast(36.dp)),
+            shape = playShape,
+            colors = IconButtonDefaults.filledIconButtonColors(containerColor = play, contentColor = onPlay),
+        ) {
+            val playPause = appString(R.string.text_play_pause_14a1d0)
+            PlayPauseIcon(state.isPlaying, onPlay, Modifier.size(26.dp * scale).semantics { contentDescription = playPause })
+        }
+        IconButton(onClick = onNext) {
+            Icon(Icons.Filled.SkipNext, appString(R.string.text_next_bc9819), tint = colors.onSurface)
+        }
+        if (state.skipButtons) IconButton(onClick = { skipBy(state, LongForm.SKIP_SEC, onSeek) }) {
+            Icon(Icons.Filled.Forward10, appString(R.string.skip_forward_seconds, LongForm.SKIP_SEC), modifier = Modifier.size(22.dp), tint = colors.onSurface)
+        } else if (modes && !djMode) DockRepeat(state, onCycleRepeat)
+    }
+}
+
+@Composable
+internal fun DockArtist(artist: String, onOpenArtist: (() -> Unit)?) {
+    val colors = MaterialTheme.colorScheme
+    val hover = remember { MutableInteractionSource() }
+    val hovered by hover.collectIsHoveredAsState()
+    val link = onOpenArtist != null
+    MarqueeText(
+        artist, MaterialTheme.typography.bodySmall.copy(textDecoration = if (link && hovered) TextDecoration.Underline else null),
+        if (link && hovered) colors.onSurface else colors.onSurfaceVariant,
+        modifier = if (onOpenArtist == null) Modifier else Modifier
+            .clickable(interactionSource = hover, indication = null, onClickLabel = appString(R.string.text_go_to_artist_d8f70c), onClick = onOpenArtist)
+            .pointerHoverIcon(PointerIcon.Hand),
+    )
+}
+
+@Composable
+internal fun PaneToggle(pane: PlayerPane, icon: ImageVector, checked: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    IconToggleButton(
+        checked = checked,
+        onCheckedChange = { onClick() },
+        colors = IconButtonDefaults.iconToggleButtonColors(
+            contentColor = colors.onSurfaceVariant,
+            checkedContentColor = colors.primary,
+        ),
+        modifier = Modifier.then(if (checked) Modifier.paperClip(CircleShape).background(colors.primary.copy(alpha = 0.14f)) else Modifier),
+    ) { Icon(icon, pane.label) }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
+@Composable
+fun VolumeControl(
+    volume: Float,
+    onVolumeChange: (Float) -> Unit,
+    onToggleMute: () -> Unit,
+    sliderWidth: Dp,
+    modifier: Modifier = Modifier,
+    fill: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+) {
+    val colors = MaterialTheme.colorScheme
+    val current by rememberUpdatedState(volume)
+    val change by rememberUpdatedState(onVolumeChange)
+    val hover = remember { MutableInteractionSource() }
+    val touch = remember { MutableInteractionSource() }
+    val hovered by hover.collectIsHoveredAsState()
+    val dragged by touch.collectIsDraggedAsState()
+    val pressed by touch.collectIsPressedAsState()
+    val level = volume.coerceIn(0f, 1f)
+    Row(
+        modifier.hoverable(hover).onPointerEvent(PointerEventType.Scroll) { event ->
+            val delta = event.changes.firstOrNull()?.scrollDelta?.y ?: 0f
+            if (delta != 0f) change((current - delta * 0.05f).coerceIn(0f, 1f))
+        },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(onClick = onToggleMute) {
+            Icon(volumeIcon(volume), appString(R.string.text_mute_0f0973), tint = colors.onSurfaceVariant, modifier = Modifier.size(22.dp))
+        }
+        Box(Modifier.width(sliderWidth), contentAlignment = Alignment.Center) {
+            Slider(
+                value = level,
+                onValueChange = onVolumeChange,
+                interactionSource = touch,
+                modifier = Modifier.fillMaxWidth().height(24.dp).semantics { contentDescription = appString(R.string.text_volume_3b18e8) },
+                colors = SliderDefaults.colors(thumbColor = colors.primary, activeTrackColor = colors.primary),
+                thumb = { SliderDot(12.dp, colors.onSurface) },
+                track = { slider ->
+                    Box(Modifier.fillMaxWidth().height(4.dp).paperClip(CircleShape).background(colors.onSurface.copy(alpha = 0.14f))) {
+                        Box(Modifier.fillMaxWidth(slider.value.coerceIn(0f, 1f)).fillMaxHeight().background(fill))
+                    }
+                },
+            )
+            if (hovered || dragged || pressed) VolumeTip(level, sliderWidth)
+        }
+    }
+}
+
+// the slider pins its thumb to the top of its height, so the dot centres itself with the same rounding the slider uses for the track
+@Composable
+private fun SliderDot(size: Dp, color: Color) {
+    Box(Modifier.layout { measurable, constraints ->
+        val dot = measurable.measure(constraints.copy(minHeight = 0))
+        val height = if (constraints.hasBoundedHeight) maxOf(constraints.maxHeight, dot.height) else dot.height
+        layout(dot.width, height) { dot.place(0, (height - dot.height) / 2) }
+    }.size(size).paperClip(CircleShape).background(color))
+}
+
+@Composable
+private fun VolumeTip(level: Float, width: Dp) {
+    val colors = MaterialTheme.colorScheme
+    val density = LocalDensity.current
+    val gap = with(density) { 6.dp.roundToPx() }
+    val thumbX = with(density) { (6.dp + (width - 12.dp) * level).roundToPx() }
+    val provider = remember(thumbX, gap) {
+        object : PopupPositionProvider {
+            override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize) =
+                IntOffset(
+                    (anchorBounds.left + thumbX - popupContentSize.width / 2).coerceIn(0, (windowSize.width - popupContentSize.width).coerceAtLeast(0)),
+                    anchorBounds.top - popupContentSize.height - gap,
+                )
+        }
+    }
+    Popup(popupPositionProvider = provider) {
+        Text(
+            "${(level * 100).roundToInt()}%",
+            style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = colors.inverseOnSurface,
+            modifier = Modifier.paperClip(RoundedCornerShape(themedCorner(8.dp))).background(colors.inverseSurface).padding(horizontal = 8.dp, vertical = 4.dp),
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun DockSeek(state: PlayerUiState, onSeek: (Float) -> Unit, showTimes: Boolean, thick: Boolean = false) {
+    val colors = MaterialTheme.colorScheme
+    val duration = state.durationSec
+    if (duration <= 0) {
+        Row(Modifier.height(24.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (state.isLive) Box(Modifier.size(8.dp).paperClip(CircleShape).background(colors.primary))
+            Spacer(Modifier.width(6.dp))
+            Text(if (state.isLive) appString(R.string.text_live_6990f0) else appString(R.string.text_streaming_1e8325),
+                style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = colors.primary)
+        }
+        return
+    }
+    val seekTarget = colors.primary
+    val seekBrush = com.aurora.music.ui.theme.rememberColorSweep(seekTarget)
+    val thumbColor by animateColorAsState(seekTarget, androidx.compose.animation.core.tween(750), label = "dockThumb")
+    var dragging by remember(state.current.id) { mutableStateOf<Float?>(null) }
+    var pending by remember(state.current.id) { mutableStateOf<Float?>(null) }
+    LaunchedEffect(state.progress) {
+        pending?.let { if (abs(state.progress - it) <= 0.02f) pending = null }
+    }
+    LaunchedEffect(pending) {
+        if (pending != null) { delay(1500); pending = null }
+    }
+    val value = dragging ?: pending ?: state.progress
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        if (showTimes) Text(formatTime((value * duration).toInt()), style = MaterialTheme.typography.labelSmall,
+            color = colors.onSurfaceVariant, modifier = Modifier.widthIn(min = 40.dp))
+        Slider(
+            value = value.coerceIn(0f, 1f),
+            onValueChange = { dragging = it },
+            onValueChangeFinished = { dragging?.let { onSeek(it); pending = it }; dragging = null },
+            modifier = Modifier.weight(1f).height(24.dp).semantics { contentDescription = appString(R.string.tablet_seek) },
+            colors = SliderDefaults.colors(thumbColor = colors.primary, activeTrackColor = colors.primary),
+            thumb = { SliderDot(if (thick) 14.dp else 12.dp, thumbColor) },
+            track = { slider ->
+                Box(Modifier.fillMaxWidth().height(if (thick) 8.dp else 4.dp).paperClip(CircleShape).background(colors.onSurface.copy(alpha = 0.14f))) {
+                    Box(Modifier.fillMaxWidth(slider.value.coerceIn(0f, 1f)).fillMaxHeight().background(seekBrush))
+                }
+            },
+        )
+        if (showTimes) Text(formatTime(duration), style = MaterialTheme.typography.labelSmall,
+            color = colors.onSurfaceVariant, modifier = Modifier.widthIn(min = 40.dp).padding(start = 6.dp))
+    }
+}

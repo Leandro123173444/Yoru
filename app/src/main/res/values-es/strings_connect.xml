@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_section">"Controlar otro dispositivo"</string>
+    <string name="connect_this_device">"Este dispositivo"</string>
+    <string name="connect_pair_title">"Vincular con %1$s"</string>
+    <string name="connect_enter_code">"Introduce el código que aparece en %1$s."</string>
+    <string name="connect_add_by_address">"Añadir por dirección"</string>
+    <string name="connect_address_help">"Para Tailscale u otra red, introduce la IP o el nombre del dispositivo, p. ej. 100.101.102.103."</string>
+    <string name="connect_device_key">"Clave del dispositivo %1$s"</string>
+    <string name="connect_device_key_help">"Comprueba que el otro dispositivo muestra la misma clave y luego introduce su código."</string>
+    <string name="connect_already_paired">"Ya está vinculado. Se guardó la nueva dirección."</string>
+    <string name="connect_switch_title">"Al cambiar de dispositivo"</string>
+    <string name="connect_switch_keep">"Seguir reproduciendo en ambos"</string>
+    <string name="connect_switch_pause">"Pausar aquí"</string>
+    <string name="connect_switch_move">"Mover la reproducción"</string>
+    <string name="connect_output">"Salida"</string>
+    <string name="connect_preset">"Preajuste"</string>
+    <string name="connect_sources_note">"Las canciones se reproducen desde las fuentes de ese dispositivo."</string>
+    <string name="connect_reachable_at">"Disponible en"</string>
+    <string name="connect_none_found">"No se encontraron otros dispositivos YORU. Activa allí el control remoto y vuelve a buscar."</string>
+    <string name="connect_settings_title">"YORU Connect"</string>
+    <string name="connect_settings_summary">"Controla otros dispositivos YORU o deja que controlen este"</string>
+    <string name="connect_continue">"Continuar"</string>
+    <string name="connect_this_key">"Clave de este dispositivo: %1$s"</string>
+    <string name="connect_settings_link">"Código de emparejamiento, direcciones y dispositivos"</string>
+    <string name="connect_devices">"Dispositivos"</string>
+    <string name="connect_guide_title">"Cómo conectar"</string>
+    <string name="connect_guide_host">"En el dispositivo que debe reproducir la música, activa Permitir control remoto y toca Mostrar código de emparejamiento."</string>
+    <string name="connect_guide_pick">"En el dispositivo desde el que controlas, abre Reproducir en en el reproductor, elige ese dispositivo e introduce el código. Solo hay que emparejar una vez."</string>
+    <string name="connect_guide_network">"Mantén ambos en la misma red Wi-Fi. En otra red, como Tailscale, usa Añadir por dirección."</string>
+    <string name="connect_guide_sources">"La música se reproduce desde las fuentes de ese dispositivo, así que inicia sesión allí en el mismo servicio. YouTube Music y SoundCloud también funcionan como invitado."</string>
+    <string name="connect_host_on">"Activado. Los dispositivos emparejados pueden encontrar y controlar este."</string>
+    <string name="connect_host_off">"Desactivado. Actívalo para que otro dispositivo reproduzca música aquí."</string>
+    <string name="connect_idle_connecting">"Conectando…"</string>
+    <string name="connect_idle_empty">"No se reproduce nada allí. Elige una canción para empezar."</string>
+    <string name="connect_error_unavailable">"%1$s no puede reproducir estas canciones. Inicia sesión allí en el mismo servicio de música."</string>
+    <string name="connect_error_disabled">"El control remoto está desactivado en %1$s. Actívalo allí."</string>
+    <string name="connect_error_unpaired">"%1$s ya no acepta este dispositivo. Vuelve a emparejarlo."</string>
+    <string name="connect_error_unreachable">"No se puede conectar con %1$s. Comprueba que ambos estén en la misma red y que YORU esté abierto allí."</string>
+    <string name="connect_error_lost">"Se perdió la conexión con %1$s."</string>
+</resources>

@@ -1,0 +1,326 @@
+package com.decent.usbaudio
+
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.hardware.usb.UsbConstants
+import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbDeviceConnection
+import android.hardware.usb.UsbInterface
+import android.hardware.usb.UsbManager
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import java.util.UUID
+
+class UsbAudioDevice private constructor(private val context: Context) {
+    private val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
+    private var connection: UsbDeviceConnection? = null
+    private var currentDevice: UsbDevice? = null
+    private val claimed = mutableListOf<UsbInterface>()
+    private var cachedDeviceInfo: UsbAudioDeviceInfo? = null
+    private var selectedFormat: UsbAudioFormat? = null
+    private val rates = mutableMapOf<Pair<Int, Int>, List<UsbRateRange>>()
+    // per feature unit, null once a unit's range proved unreadable or unusable
+    private val volumeRanges = mutableMapOf<Int, Triple<Int, Int, Int>?>()
+    @Volatile var lastFailure: String? = null; private set
+
+    companion object {
+        @Volatile private var instance: UsbAudioDevice? = null
+        fun getInstance(context: Context): UsbAudioDevice = instance ?: synchronized(this) {
+            instance ?: UsbAudioDevice(context.applicationContext).also { instance = it }
+        }
+        private const val MUTE = 1
+        private const val VOLUME = 2
+    }
+
+    fun isAudioOutput(device: UsbDevice): Boolean = (0 until device.interfaceCount).any { index ->
+        val iface = device.getInterface(index)
+        iface.interfaceClass == UsbConstants.USB_CLASS_AUDIO && iface.interfaceSubclass == 2 &&
+            (0 until iface.endpointCount).any { ep ->
+                iface.getEndpoint(ep).let { it.type == UsbConstants.USB_ENDPOINT_XFER_ISOC && it.direction == UsbConstants.USB_DIR_OUT }
+            }
+    }
+
+    fun findUsbAudioDevice(): UsbDevice? = usbManager.deviceList.values.sortedBy { it.deviceName }.firstOrNull(::isAudioOutput)
+    fun hasPermission(device: UsbDevice): Boolean = usbManager.hasPermission(device)
+    fun isAttached(device: UsbDevice): Boolean = usbManager.deviceList[device.deviceName]?.deviceId == device.deviceId
+
+    fun requestPermission(device: UsbDevice, callback: (Boolean) -> Unit) {
+        if (!isAttached(device)) { callback(false); return }
+        if (hasPermission(device)) { callback(true); return }
+        val action = context.packageName + ".USB_AUDIO_PERMISSION." + UUID.randomUUID()
+        val handler = Handler(Looper.getMainLooper())
+        var finished = false
+        var receiver: BroadcastReceiver? = null
+        lateinit var timeout: Runnable
+        fun finish(granted: Boolean) {
+            synchronized(handler) {
+                if (finished) return
+                finished = true
+            }
+            handler.removeCallbacks(timeout)
+            receiver?.let { runCatching { context.unregisterReceiver(it) } }
+            callback(granted && isAttached(device) && hasPermission(device))
+        }
+        timeout = Runnable { finish(false) }
+        receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context, intent: Intent) {
+                val returned = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
+                if (returned?.deviceName != device.deviceName || returned.deviceId != device.deviceId) return
+                when (intent.action) {
+                    action -> finish(intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false))
+                    UsbManager.ACTION_USB_DEVICE_DETACHED -> finish(false)
+                }
+            }
+        }
+        val filter = IntentFilter(action).apply { addAction(UsbManager.ACTION_USB_DEVICE_DETACHED) }
+        try {
+            if (Build.VERSION.SDK_INT >= 33) context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            else context.registerReceiver(receiver, filter)
+            handler.postDelayed(timeout, 60_000)
+            val intent = PendingIntent.getBroadcast(context, device.deviceId,
+                Intent(action).setPackage(context.packageName), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_ONE_SHOT)
+            usbManager.requestPermission(device, intent)
+        } catch (_: RuntimeException) { finish(false) }
+    }
+
+    @Synchronized fun openDevice(device: UsbDevice, experimentalDsd: Boolean = false): UsbAudioDeviceInfo? {
+        if (!isAttached(device) || !hasPermission(device)) { lastFailure = "USB permission is unavailable."; return null }
+        if (currentDevice?.deviceName == device.deviceName && currentDevice?.deviceId == device.deviceId && connection != null)
+            return cachedDeviceInfo
+        closeDevice()
+        val conn = try { usbManager.openDevice(device) } catch (_: RuntimeException) { null }
+            ?: run { lastFailure = "The USB device could not be opened."; return null }
+        connection = conn; currentDevice = device
+        val report = UsbAudioDescriptors.parse(conn.rawDescriptors ?: ByteArray(0))
+        val config = ByteArray(1)
+        val activeConfiguration = if (conn.controlTransfer(0x80, 8, 0, 0, config, 1, 500) == 1) config[0].toInt() and 255 else -1
+        val speed = UsbAudioStream.nativeGetUsbSpeed(conn.fileDescriptor)
+        val formats = report.formats.filter { it.configuration == activeConfiguration }.map { it.copy(fullSpeed = speed == 2) }
+        val supported = formats.filter { it.pcmUnsupportedReason(experimentalDsd) == null ||
+            experimentalDsd && it.rawUnsupportedReason(true) == null }
+        val best = supported.maxWithOrNull(compareBy<UsbAudioFormat> { it.validBits }.thenBy { it.containerBytes })
+        if (best == null || speed !in 2..3) {
+            lastFailure = when {
+                report.malformed -> "USB descriptors are malformed."
+                speed !in 2..3 -> "Direct output requires a verified full-speed or high-speed USB connection."
+                else -> (formats.firstOrNull()?.unsupportedReason ?: "No supported USB PCM output was found.") + formats.joinToString("; ") {
+                    "UAC${if (it.protocol == 0x20) 2 else if (it.protocol == 0) 1 else 3} ${it.channels} ch ${it.validBits}/${it.containerBits}-bit, packet ${it.maxPacketSize}, interval ${it.interval}"
+                }.takeIf(String::isNotEmpty)?.let { " Detected: $it." }.orEmpty()
+            }
+            closeDevice(); return null
+        }
+        val info = UsbAudioDeviceInfo(conn, conn.fileDescriptor, device.productName ?: "USB audio",
+            best.interfaceId, best.endpointOut, best.endpointFeedback, best.maxPacketSize,
+            formats.count { it.interfaceId == best.interfaceId }, best.clockSourceId, best.alternateSetting,
+            best.containerBits, best.controlInterfaceId, formats, speed)
+        cachedDeviceInfo = info; selectedFormat = best; lastFailure = null
+        return info
+    }
+
+    @Synchronized fun getClockRates(format: UsbAudioFormat, experimentalDsd: Boolean = false): List<UsbRateRange> {
+        val conn = connection ?: return emptyList()
+        if (cachedDeviceInfo?.formats.orEmpty().none { it === format } || format.transportUnsupportedReason(experimentalDsd) != null) return emptyList()
+        if (format.protocol == 0) return format.descriptorRates
+        val key = format.controlInterfaceId to format.clockSourceId
+        rates[key]?.let { return it }
+        if (!claimInterface(format.controlInterfaceId)) return emptyList()
+        val index = format.clockSourceId shl 8 or format.controlInterfaceId
+        val countBytes = ByteArray(2)
+        if (conn.controlTransfer(0xa1, 2, 0x0100, index, countBytes, 2, 500) != 2) return emptyList()
+        val count = (countBytes[0].toInt() and 255) or ((countBytes[1].toInt() and 255) shl 8)
+        if (count !in 1..64) return emptyList()
+        val bytes = ByteArray(2 + count * 12)
+        if (conn.controlTransfer(0xa1, 2, 0x0100, index, bytes, bytes.size, 500) != bytes.size) return emptyList()
+        return runCatching { UsbAudioDescriptors.parseClockRanges(bytes) }.getOrDefault(emptyList()).also { rates[key] = it }
+    }
+
+    @Synchronized fun selectFormat(rate: Int, channels: Int, sourceBits: Int): UsbAudioFormat? =
+        cachedDeviceInfo?.formats.orEmpty().filter { it.unsupportedReason == null && it.channels == channels &&
+            it.validBits >= sourceBits && it.fits(rate) && getClockRates(it).any { range -> range.contains(rate) } }
+            .minWithOrNull(compareBy<UsbAudioFormat> { it.containerBytes }.thenBy { it.validBits }.thenBy { it.alternateSetting })
+
+    @Synchronized fun configureFormat(format: UsbAudioFormat, rate: Int, experimentalDsd: Boolean = false): UsbClockStatus = configure(format, rate, false, experimentalDsd)
+    @Synchronized fun configureRawFormat(format: UsbAudioFormat, rate: Int, experimentalDsd: Boolean = false): UsbClockStatus = configure(format, rate, true, experimentalDsd)
+
+    private fun configure(format: UsbAudioFormat, rate: Int, raw: Boolean, experimentalDsd: Boolean): UsbClockStatus {
+        fun fail(reason: String, observed: Int? = null, valid: Boolean? = null): UsbClockStatus {
+            lastFailure = reason
+            return UsbClockStatus(rate, observed, valid, reason)
+        }
+        val conn = connection ?: return fail("USB is disconnected.")
+        if (cachedDeviceInfo?.formats.orEmpty().none { it === format } ||
+            (if (raw) format.rawUnsupportedReason(experimentalDsd) else format.pcmUnsupportedReason(experimentalDsd)) != null ||
+            !format.fits(rate, experimentalDsd) || getClockRates(format, experimentalDsd).none { it.contains(rate) }) return fail("The USB format or rate is unsupported.")
+        for (id in listOf(format.controlInterfaceId, format.interfaceId).distinct()) {
+            if (!claimInterface(id)) return fail(lastFailure ?: "The USB interface could not be claimed.")
+        }
+        selectedFormat = format
+        if (!setAltSetting(0)) return fail("The USB stream could not be stopped.")
+        if (format.protocol == 0) return configureEndpointRate(conn, format, rate, ::fail)
+        val observedBefore = readSampleRate().takeIf { it > 0 }
+        if (observedBefore != rate) {
+            if (format.clockControls and 2 == 0) return fail("The USB clock is read-only.", observedBefore)
+            val data = ByteArray(4) { (rate shr (it * 8)).toByte() }
+            if (conn.controlTransfer(0x21, 1, 0x0100, format.clockSourceId shl 8 or format.controlInterfaceId, data, 4, 1000) != 4)
+                return fail("The USB clock rejected the requested rate.", observedBefore)
+        }
+        var observed: Int? = null; var valid: Boolean? = null
+        repeat(10) {
+            observed = readSampleRate().takeIf { it > 0 }; valid = readClockValidity()
+            if (observed == rate && valid != false) {
+                if (!setAltSetting(format.alternateSetting)) return fail("The USB streaming setting was rejected.", observed, valid)
+                lastFailure = null
+                return UsbClockStatus(rate, observed, valid, null)
+            }
+            Thread.sleep(10)
+        }
+        return fail("The USB clock could not be verified.", observed, valid)
+    }
+
+    private fun configureEndpointRate(conn: UsbDeviceConnection, format: UsbAudioFormat, rate: Int,
+        fail: (String, Int?, Boolean?) -> UsbClockStatus): UsbClockStatus {
+        if (!setAltSetting(format.alternateSetting)) return fail("The USB streaming setting was rejected.", null, null)
+        if (format.endpointRateControl) {
+            val data = ByteArray(3) { (rate shr (it * 8)).toByte() }
+            if (conn.controlTransfer(0x22, 1, 0x0100, format.endpointOut, data, 3, 1000) != 3)
+                return fail("The USB endpoint rejected the requested rate.", null, null)
+            val read = ByteArray(3)
+            if (conn.controlTransfer(0xa2, 0x81, 0x0100, format.endpointOut, read, 3, 500) == 3) {
+                val observed = (0..2).fold(0) { value, i -> value or ((read[i].toInt() and 255) shl (i * 8)) }
+                if (observed != rate) return fail("The USB endpoint did not apply the requested rate.", observed, null)
+            }
+        }
+        lastFailure = null
+        return UsbClockStatus(rate, rate, null, null)
+    }
+
+    private fun claimInterface(id: Int): Boolean {
+        if (claimed.any { it.id == id }) return true
+        val conn = connection ?: return false
+        val device = currentDevice ?: return false
+        val iface = (0 until device.interfaceCount).map(device::getInterface)
+            .firstOrNull { it.id == id && it.alternateSetting == 0 }
+        if (iface == null) {
+            lastFailure = "The USB interface has no idle setting."
+            return false
+        }
+        if (!conn.claimInterface(iface, true)) {
+            lastFailure = "The USB interface could not be claimed."
+            return false
+        }
+        claimed += iface
+        return true
+    }
+
+    @Synchronized fun setAltSetting(altSetting: Int): Boolean {
+        val conn = connection ?: return false
+        val device = currentDevice ?: return false
+        val selected = selectedFormat ?: return false
+        val iface = (0 until device.interfaceCount).map(device::getInterface)
+            .firstOrNull { it.id == selected.interfaceId && it.alternateSetting == altSetting } ?: return false
+        return conn.setInterface(iface)
+    }
+
+    @Synchronized fun readSampleRate(): Int {
+        val conn = connection ?: return -1
+        val format = selectedFormat?.takeIf { it.protocol == 0x20 } ?: return -1
+        val bytes = ByteArray(4)
+        if (conn.controlTransfer(0xa1, 1, 0x0100, format.clockSourceId shl 8 or format.controlInterfaceId, bytes, 4, 500) != 4) return -1
+        var rate = 0L
+        for (i in 0..3) rate = rate or ((bytes[i].toLong() and 255) shl (i * 8))
+        return rate.takeIf { it in 8000..768000 }?.toInt() ?: -1
+    }
+
+    @Synchronized fun readClockValidity(): Boolean? {
+        val conn = connection ?: return null
+        val format = selectedFormat ?: return null
+        if (format.protocol != 0x20 || format.clockControls and 4 == 0) return null
+        val value = ByteArray(1)
+        if (conn.controlTransfer(0xa1, 1, 0x0200, format.clockSourceId shl 8 or format.controlInterfaceId, value, 1, 500) != 1) return false
+        return value[0].toInt() == 1
+    }
+    fun readClockValid(): Boolean = readClockValidity() == true
+    @Synchronized fun setSampleRate(sampleRateHz: Int): Boolean =
+        selectedFormat?.let { configureFormat(it, sampleRateHz).verified } == true
+
+    // dac feature unit volume, null when the open device has no writable volume
+    @Synchronized fun readHardwareVolume(): UsbHardwareVolume? {
+        val conn = connection ?: return null
+        val format = selectedFormat ?: return null
+        val unit = format.volumeUnit ?: return null
+        if (!claimInterface(format.controlInterfaceId)) return null
+        val channel = unit.volumeTargets.first()
+        if (unit.unitId !in volumeRanges) volumeRanges[unit.unitId] = readVolumeRange(conn, format, unit.unitId, channel)
+            ?.takeIf { UsbHardwareVolume.of(it.first, it.second, it.third, it.second, false) != null }
+        val range = volumeRanges[unit.unitId] ?: return null
+        val current = getFeature(conn, format, unit.unitId, VOLUME, channel, 2)?.let { UsbAudioDescriptors.s16(it, 0) } ?: return null
+        val muted = unit.muteTargets.firstOrNull()?.let { getFeature(conn, format, unit.unitId, MUTE, it, 1)?.get(0)?.toInt() == 1 } == true
+        return UsbHardwareVolume.of(range.first, range.second, range.third, current, muted)
+    }
+
+    @Synchronized fun setHardwareVolume(level: Int, mute: Boolean): Boolean {
+        val conn = connection ?: return false
+        val format = selectedFormat ?: return false
+        val unit = format.volumeUnit ?: return false
+        val range = volumeRanges[unit.unitId] ?: return false
+        if (!claimInterface(format.controlInterfaceId)) return false
+        val muteTargets = unit.muteTargets
+        val target = if (mute && muteTargets.isEmpty()) range.first else level
+        val bytes = byteArrayOf(target.toByte(), (target shr 8).toByte())
+        val volumeSet = unit.volumeTargets.map { setFeature(conn, format, unit.unitId, VOLUME, it, bytes) }.all { it }
+        val muteSet = muteTargets.map { setFeature(conn, format, unit.unitId, MUTE, it, byteArrayOf(if (mute) 1 else 0)) }.all { it }
+        return volumeSet && muteSet
+    }
+
+    private fun readVolumeRange(conn: UsbDeviceConnection, format: UsbAudioFormat, unit: Int, channel: Int): Triple<Int, Int, Int>? {
+        if (format.protocol == 0x20) {
+            val head = getFeature(conn, format, unit, VOLUME, channel, 2, request = 2) ?: return null
+            val count = UsbAudioDescriptors.u16(head, 0)
+            if (count !in 1..64) return null
+            val bytes = getFeature(conn, format, unit, VOLUME, channel, 2 + count * 6, request = 2) ?: return null
+            return runCatching { UsbAudioDescriptors.parseVolumeRange(bytes) }.getOrNull()
+        }
+        // uac1 GET_MIN, GET_MAX, GET_RES
+        fun read(request: Int) = getFeature(conn, format, unit, VOLUME, channel, 2, request)
+        val min = read(0x82) ?: return null
+        val max = read(0x83) ?: return null
+        val res = read(0x84) ?: return null
+        return Triple(UsbAudioDescriptors.s16(min, 0), UsbAudioDescriptors.s16(max, 0), UsbAudioDescriptors.u16(res, 0))
+    }
+
+    private fun getFeature(conn: UsbDeviceConnection, format: UsbAudioFormat, unit: Int, selector: Int, channel: Int, length: Int,
+        request: Int = if (format.protocol == 0x20) 1 else 0x81): ByteArray? {
+        val data = ByteArray(length)
+        val read = conn.controlTransfer(0xa1, request, selector shl 8 or channel, unit shl 8 or format.controlInterfaceId, data, length, 500)
+        return data.takeIf { read == length }
+    }
+
+    private fun setFeature(conn: UsbDeviceConnection, format: UsbAudioFormat, unit: Int, selector: Int, channel: Int, data: ByteArray): Boolean =
+        conn.controlTransfer(0x21, 1, selector shl 8 or channel, unit shl 8 or format.controlInterfaceId, data, data.size, 500) == data.size
+
+    @Synchronized fun findAltSettingForBitDepth(targetBitDepth: Int): Pair<Int, Int> =
+        cachedDeviceInfo?.formats.orEmpty().filter { it.unsupportedReason == null && it.validBits >= targetBitDepth }
+            .minByOrNull { it.containerBytes }?.let { it.alternateSetting to it.containerBits } ?: (-1 to 0)
+
+    @Synchronized fun closeDevice() {
+        val conn = connection
+        val fd = conn?.fileDescriptor
+        claimed.asReversed().forEach { runCatching { conn?.releaseInterface(it) } }
+        claimed.clear(); connection = null; currentDevice = null; cachedDeviceInfo = null; selectedFormat = null; rates.clear()
+        volumeRanges.clear()
+        conn?.close()
+        if (fd != null) UsbAudioStream.nativeConnectionClosed(fd)
+    }
+
+    @Synchronized fun resetAndReopen() {
+        val device = currentDevice ?: return
+        val fd = connection?.fileDescriptor ?: return
+        UsbAudioStream.nativeUsbReset(fd)
+        closeDevice()
+        if (isAttached(device) && hasPermission(device)) openDevice(device)
+    }
+}

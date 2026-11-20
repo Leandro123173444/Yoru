@@ -1,0 +1,17 @@
+# Gradle / Android
+.gradle/
+build/
+local.properties
+*.apk
+*.aab
+.cxx/
+captures/
+# Firmas: nunca subir claves
+keystore/
+keystore.properties
+*.jks
+*.keystore
+# IDE / sistema
+.idea/
+*.iml
+.DS_Store

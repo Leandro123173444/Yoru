@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="soundcloud_card_detail">"Ваши лайки, плейлисты и лента"</string>
+    <string name="soundcloud_connect_title">"Подключить SoundCloud"</string>
+    <string name="soundcloud_connect_subtitle">"Ваши лайки, плейлисты и исполнители, на которых вы подписаны"</string>
+    <string name="soundcloud_sign_in">"Войти в SoundCloud"</string>
+    <string name="soundcloud_sign_in_hint">"Войдите на странице SoundCloud. YORU подключится сразу после входа."</string>
+    <string name="soundcloud_waiting">"Войдите, чтобы продолжить. Если вход через Google здесь отклонён, войдите по электронной почте."</string>
+    <string name="soundcloud_details">"YORU использует неофициальный веб-интерфейс SoundCloud и хранит данные входа в зашифрованном виде на этом устройстве."</string>
+    <string name="soundcloud_connect_failed">"Не удалось подключить SoundCloud. Попробуйте ещё раз."</string>
+    <string name="soundcloud_page_failed">"Не удалось загрузить страницу входа. Проверьте подключение и обновите страницу."</string>
+    <string name="soundcloud_captcha_hint">"SoundCloud хочет убедиться, что вы человек, прежде чем сохранить это изменение. Пройдите проверку один раз, и YORU завершит изменение."</string>
+    <string name="player_comments">"Комментарии"</string>
+    <string name="player_soundcloud_comments">"Комментарии SoundCloud"</string>
+    <string name="comments_empty">"Комментариев пока нет. Будьте первым."</string>
+    <string name="comments_none">"Здесь пока нет комментариев"</string>
+    <string name="comment_hint_untimed">"Добавьте комментарий…"</string>
+    <string name="comment_like_failed">"Не удалось обновить отметку «Нравится». Попробуйте ещё раз."</string>
+    <string name="comment_hint">"Комментарий на %1$s"</string>
+    <string name="comment_post">"Отправить"</string>
+    <string name="comment_failed">"Не удалось отправить комментарий. Попробуйте ещё раз."</string>
+    <string name="soundcloud_verify">"Подтвердить SoundCloud"</string>
+    <string name="soundcloud_verify_detail">"Отправляет ожидающие лайки и подписки. SoundCloud может сначала попросить подтвердить, что вы человек."</string>
+    <string name="soundcloud_verify_done">"SoundCloud обновлён."</string>
+    <string name="soundcloud_verify_failed">"SoundCloud всё ещё ждёт подтверждения. Попробуйте ещё раз."</string>
+    <string name="soundcloud_verify_waiting">"Ожидает: %1$d"</string>
+    <string name="comment_needs_verify">"SoundCloud хочет убедиться, что вы человек. Откройте Настройки → Аккаунты и выберите «Подтвердить SoundCloud»."</string>
+</resources>

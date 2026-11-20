@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chromium_downloading" formatted="false">"De inlogbrowser wordt gedownload. Dit gebeurt één keer en kost ongeveer 150 MB."</string>
+    <string name="chromium_failed" formatted="false">"De inlogbrowser kon niet starten: %1$s"</string>
+    <string name="chromium_preparing" formatted="false">"Inlogbrowser wordt voorbereid…"</string>
+    <string name="insights_location_history_guide_desktop" formatted="false">"Elke keer luisteren bewaart de exacte plek waar het speelde, zodat je het op een kaart ziet. Het blijft op deze computer, wordt nooit geüpload en gaat niet mee in back-ups. Je kunt het hier of vanaf de kaart altijd verwijderen."</string>
+    <string name="insights_places_guide_desktop" formatted="false">"Terwijl er muziek speelt, controleert Aurora je locatie hooguit elke 10 minuten, vergelijkt die met Thuis en Werk en bewaart alleen het label. Thuis en Werk zelf blijven op deze computer en gaan nooit mee in een back-up."</string>
+    <string name="insights_step_private_title_desktop" formatted="false">"Het blijft op je computer"</string>
+    <string name="levels_desktop_exclusive_needed" formatted="false">"Start het afspelen op een exclusieve uitvoer om te kalibreren."</string>
+    <string name="levels_desktop_hardware_help" formatted="false">"Voer 0=dB in: het huidige hardwarevolume van de DAC ten opzichte van volledige uitvoer."</string>
+    <string name="levels_desktop_hardware_points" formatted="false">"Demping hardwarevolume"</string>
+    <string name="levels_desktop_volume" formatted="false">"Het eigen volume van Aurora wordt direct gemeten. Kalibreer bij het huidige hardwarevolume van de DAC."</string>
+    <string name="location_linux_off" formatted="false">"Locatietoegang staat uit voor Aurora. Zet locatievoorzieningen aan in de privacyinstellingen van je bureaublad, sta Aurora toe en probeer het opnieuw."</string>
+    <string name="location_open_windows_settings" formatted="false">"Locatie-instellingen openen"</string>
+    <string name="location_unsupported" formatted="false">"Locatie is niet beschikbaar op dit systeem."</string>
+    <string name="location_windows_off" formatted="false">"Windows blokkeert locatie voor desktop-apps. Zet locatietoegang aan, ook voor desktop-apps, en probeer het opnieuw."</string>
+    <string name="lyrics_settings_summary_desktop" formatted="false">"Synchronisatiestijl en bron van songteksten"</string>
+    <string name="lyrics_source_lrclib_detail" formatted="false">"Gratis songtekstdatabase van de community"</string>
+    <string name="lyrics_source_server" formatted="false">"Eigen Bron van het Nummer"</string>
+    <string name="lyrics_source_server_detail" formatted="false">"Songteksten van je server, streamingdienst of het bestand zelf"</string>
+    <string name="lyrics_source_spotify_detail" formatted="false">"Gesynchroniseerde songteksten van een samengevoegd Spotify-account"</string>
+    <string name="lyrics_sources_hint" formatted="false">"Aurora controleert ze in deze volgorde. De eerste gesynchroniseerde songtekst wordt gebruikt, anders de eerste die er is."</string>
+    <string name="lyrics_sources_title_desktop" formatted="false">"Bronnen voor Songteksten"</string>
+    <string name="merge_comments_desktop" formatted="false">"SoundCloud-reacties"</string>
+    <string name="merge_comments_summary_desktop" formatted="false">"Toon getimede reacties als er een passend SoundCloud-nummer is gevonden"</string>
+    <string name="merge_lyrics_desktop" formatted="false">"Spotify-songteksten"</string>
+    <string name="merge_lyrics_summary_desktop" formatted="false">"Gebruik de gesynchroniseerde songteksten van Spotify voor nummers uit andere bronnen"</string>
+    <string name="merge_options_desktop" formatted="false">"Samenvoegopties"</string>
+    <string name="merge_options_note" formatted="false">"Als SoundCloud of Spotify deel uitmaakt van je samengevoegde bibliotheek, kan Aurora hun extra\'s naar nummers uit je andere bronnen brengen. Zet elk ervan helemaal uit of alleen voor nummers uit een bepaalde bron."</string>
+    <string name="merge_options_summary_desktop" formatted="false">"Wat samengevoegde diensten aan je nummers toevoegen"</string>
+    <string name="merge_songs_from" formatted="false">"Nummers Uit"</string>
+    <string name="playlist_save_to_desktop" formatted="false">"Opslaan In"</string>
+    <string name="shortcut_seek_back" formatted="false">"Terugspoelen"</string>
+    <string name="shortcut_seek_forward" formatted="false">"Vooruitspoelen"</string>
+    <string name="shortcut_show_list" formatted="false">"Sneltoetsen Tonen"</string>
+    <string name="shortcut_volume_down" formatted="false">"Volume Omlaag"</string>
+    <string name="shortcut_volume_up" formatted="false">"Volume Omhoog"</string>
+    <string name="shortcuts_title" formatted="false">"Sneltoetsen"</string>
+    <string name="storage_youtube_desktop_note" formatted="false">"Downloads van YouTube worden opgeslagen in Music/Aurora in je gebruikersmap, die aan je muziekmappen wordt toegevoegd."</string>
+    <string name="tag_edit_desktop_note" formatted="false">"Tags schrijven wijzigt het bestand op deze computer. Sluit het eerst in andere apps."</string>
+    <string name="text_acrylic_f39ce1" formatted="false">"Acryl"</string>
+    <string name="text_add_music_folder_a083d8" formatted="false">"Muziekmap toevoegen"</string>
+    <string name="text_audio_decoding_copyright_the_ffmpeg_developers_lgpl_3_0_or_later_6338f2" formatted="false">"Audiodecodering. Copyright © de FFmpeg-ontwikkelaars. LGPL-3.0-or-later, dynamisch gekoppeld via JavaCPP Presets. Volledige licentie: https://www.gnu.org/licenses/lgpl-3.0.html"</string>
+    <string name="text_aurora_s_volume_sets_the_dac_s_own_volume_when_it_has_one_the_audi_371db5" formatted="false">"Het volume van Aurora regelt het volume van de DAC zelf, als die er een heeft. Het geluid blijft bit-perfect."</string>
+    <string name="text_aurora_takes_sole_control_of_the_device_and_sends_samples_at_the_cfbce6" formatted="false">"Aurora neemt de volledige controle over het apparaat en verstuurt samples op de eigen frequentie en bitdiepte van het nummer. Andere apps zijn stil zolang Aurora speelt. De uitvoer blijft bit-perfect wanneer verwerking, volume en ReplayGain de samples ongewijzigd laten; als het apparaat een formaat weigert, valt Aurora terug op gedeelde modus en toont Signaalpad waarom."</string>
+    <string name="text_background_tint_a39a12" formatted="false">"Achtergrondtint"</string>
+    <string name="text_bit_float_012895">"%1$d-bit float"</string>
+    <string name="text_bit_integer_72520f">"%1$d-bit integer"</string>
+    <string name="text_bit_perfect_output_that_bypasses_the_sound_server_d2dcd9" formatted="false">"Bit-perfect uitvoer die de geluidsserver omzeilt"</string>
+    <string name="text_bit_perfect_output_that_bypasses_the_windows_mixer_eff21d" formatted="false">"Bit-perfect uitvoer die de Windows-mixer omzeilt"</string>
+    <string name="text_built_with_compose_multiplatform_material_3_389c3a" formatted="false">"Gemaakt met Compose Multiplatform en Material 3."</string>
+    <string name="text_cache_50338b" formatted="false">"Cache"</string>
+    <string name="text_cannot_resize_this_image_be7b26" formatted="false">"Kan het formaat van deze afbeelding niet wijzigen."</string>
+    <string name="text_ch_282ab4">"%1$d kan."</string>
+    <string name="text_choose_a_supported_image_under_100_megapixels_af6c16" formatted="false">"Kies een ondersteunde afbeelding onder 100 megapixel."</string>
+    <string name="text_choose_an_image_smaller_than_20_mb_cc7669" formatted="false">"Kies een afbeelding kleiner dan 20 MB."</string>
+    <string name="text_choose_an_output_device_to_use_exclusive_mode_b2a25d" formatted="false">"Kies een uitvoerapparaat om exclusieve modus te gebruiken"</string>
+    <string name="text_choose_where_your_music_lives_on_this_pc_876bd8" formatted="false">"Kies waar je muziek op deze pc staat"</string>
+    <string name="text_clear_image_cache_ff7b31" formatted="false">"Afbeeldingscache wissen"</string>
+    <string name="text_close_to_tray_f91cc6" formatted="false">"Sluiten naar systeemvak"</string>
+    <string name="text_date_added_56ab7a" formatted="false">"Datum toegevoegd"</string>
+    <string name="text_device_capabilities_4cac01" formatted="false">"Apparaatmogelijkheden"</string>
+    <string name="text_device_exclusive_mode_and_buffer_f2337c" formatted="false">"Apparaat, exclusieve modus en buffer"</string>
+    <string name="text_exclusive_formats_3dafa8" formatted="false">"Formaten in exclusieve modus"</string>
+    <string name="text_exclusive_mode_01d9b2" formatted="false">"Exclusieve modus"</string>
+    <string name="text_exclusive_mode_is_unavailable_0de552">"Exclusieve modus is niet beschikbaar: %1$s"</string>
+    <string name="text_exclusive_mode_is_unavailable_on_this_device_e51016" formatted="false">"Exclusieve modus is niet beschikbaar op dit apparaat"</string>
+    <string name="text_follow_the_playing_cover_5d2e91" formatted="false">"Hoes van huidig nummer volgen"</string>
+    <string name="text_glass_edges_f462cd" formatted="false">"Glasranden"</string>
+    <string name="text_hz_is_unavailable_using_hz_14de1c">"%1$d Hz is niet beschikbaar; %2$d Hz wordt gebruikt."</string>
+    <string name="text_in_use_by_the_sound_server_or_another_app_aa3eaa" formatted="false">"In gebruik door de geluidsserver of een andere app"</string>
+    <string name="text_keep_aurora_playing_in_the_notification_area_when_the_window_clos_e5fed5" formatted="false">"Aurora laten doorspelen in het systeemvak wanneer het venster sluit"</string>
+    <string name="text_larger_buffers_ride_out_heavy_system_load_smaller_ones_react_fast_e4d5f8" formatted="false">"Grotere buffers vangen zware systeembelasting op; kleinere reageren sneller op spoelen en volume. Geldt zodra de uitvoer opnieuw wordt geopend."</string>
+    <string name="text_let_your_desktop_show_through_the_window_blurred_windows_11_only_08f192" formatted="false">"Laat het bureaublad wazig door het venster heen schijnen. Alleen Windows 11."</string>
+    <string name="text_linux_java_b7923f">"Linux · Java %1$d"</string>
+    <string name="text_macos_java_4c1e2a">"macOS · Java %1$d"</string>
+    <string name="text_logs_126dd3" formatted="false">"Logboeken"</string>
+    <string name="text_mica_3ccf84" formatted="false">"Mica"</string>
+    <string name="text_open_in_full_page_0ec923" formatted="false">"Openen op volledige pagina"</string>
+    <string name="text_output_buffer_61b372" formatted="false">"Uitvoerbuffer"</string>
+    <string name="text_panel_frost_ada0d3" formatted="false">"Matglas van panelen"</string>
+    <string name="text_playing_music_af9695" formatted="false">"Muziek wordt afgespeeld"</string>
+    <string name="text_shared_mode_mix_format_4a5bc8" formatted="false">"Mixformaat in gedeelde modus"</string>
+    <string name="text_shared_mode_mixes_aurora_with_other_apps_through_the_system_sound_0c8e9d" formatted="false">"Gedeelde modus mixt Aurora met andere apps via de geluidsserver van het systeem op 48 kHz. Schakel exclusieve modus in voor bit-perfect afspelen."</string>
+    <string name="text_shared_mode_mixes_aurora_with_other_apps_through_the_system_sound_ad2dd3" formatted="false">"Gedeelde modus mixt Aurora met andere apps via de geluidsserver van het systeem op 48 kHz."</string>
+    <string name="text_shared_mode_mixes_aurora_with_other_apps_through_the_windows_audi_a3c865" formatted="false">"Gedeelde modus mixt Aurora met andere apps via de audio-engine van Windows in het mixformaat van het apparaat. Schakel exclusieve modus in voor bit-perfect afspelen."</string>
+    <string name="text_system_default_follows_the_default_output_device_even_when_it_cha_2bff98" formatted="false">"Systeemstandaard volgt het standaarduitvoerapparaat, ook als dat tijdens het afspelen verandert."</string>
+    <string name="text_system_default_follows_the_windows_output_device_even_when_it_cha_5703e0" formatted="false">"Systeemstandaard volgt het Windows-uitvoerapparaat, ook als dat tijdens het afspelen verandert."</string>
+    <string name="text_the_audio_output_could_not_be_used_2b7767" formatted="false">"De audio-uitvoer kon niet worden gebruikt"</string>
+    <string name="text_the_device_is_in_use_by_the_sound_server_or_another_app_ask_pipew_e1e816" formatted="false">"Het apparaat is in gebruik door de geluidsserver of een andere app. Laat PipeWire of PulseAudio het vrijgeven en zet daarna exclusieve modus uit en weer aan."</string>
+    <string name="text_the_sample_rate_policy_and_dither_apply_in_exclusive_mode_shared_219b9f" formatted="false">"Het samplefrequentiebeleid en de dither gelden in exclusieve modus. Gedeelde modus speelt altijd af op 48 kHz via de geluidsserver."</string>
+    <string name="text_the_sample_rate_policy_and_dither_apply_in_exclusive_mode_shared_caca2d" formatted="false">"Het samplefrequentiebeleid en de dither gelden in exclusieve modus. Gedeelde modus speelt altijd af in het Windows-mixformaat."</string>
+    <string name="text_the_selected_output_device_was_disconnected_00e44e" formatted="false">"Het gekozen uitvoerapparaat is losgekoppeld"</string>
+    <string name="text_the_track_could_not_be_decoded_3a23e8" formatted="false">"Het nummer kon niet worden gedecodeerd"</string>
+    <string name="text_the_track_could_not_be_opened_5719af" formatted="false">"Het nummer kon niet worden geopend"</string>
+    <string name="text_the_track_s_sample_rate_is_not_supported_5c8629" formatted="false">"De samplefrequentie van het nummer wordt niet ondersteund"</string>
+    <string name="text_tint_the_whole_app_with_the_playing_song_s_cover_a83c17" formatted="false">"De hele app kleuren met de kleur van het nummer dat speelt"</string>
+    <string name="text_translucent_window_d865c7" formatted="false">"Doorschijnend venster"</string>
+    <string name="text_using_your_system_accent_colour_89502e" formatted="false">"Je systeemaccentkleur wordt gebruikt."</string>
+    <string name="text_using_your_windows_accent_colour_7d4b4a" formatted="false">"Je Windows-accentkleur wordt gebruikt."</string>
+    <string name="text_volume_3b18e8" formatted="false">"Volume"</string>
+    <string name="text_windows_capabilities_0f1fa0" formatted="false">"Windows-mogelijkheden"</string>
+    <string name="text_windows_java_2566af">"Windows · Java %1$d"</string>
+    <string name="update_desktop_install_failed" formatted="false">"Kan het installatieprogramma niet starten. Je kunt de update ook van GitHub downloaden."</string>
+    <string name="update_desktop_install_note" formatted="false">"Aurora sluit terwijl het installatieprogramma draait. Open het opnieuw als de installatie klaar is."</string>
+    <string name="youtube_download_open_folder" formatted="false">"Downloadmap openen"</string>
+    <string name="player_fullscreen" formatted="false">"Volledig scherm"</string>
+    <string name="player_exit_fullscreen" formatted="false">"Volledig scherm sluiten"</string>
+    <string name="window_minimize" formatted="false">"Minimaliseren"</string>
+    <string name="window_maximize" formatted="false">"Maximaliseren"</string>
+    <string name="window_restore" formatted="false">"Vorige grootte"</string>
+    <string name="window_system_title_bar" formatted="false">"Systeemtitelbalk"</string>
+    <string name="window_system_title_bar_summary" formatted="false">"Gebruik het vensterkader van je bureaublad in plaats van dat van Aurora. Wordt toegepast na het herstarten van Aurora."</string>
+    <string name="discord_not_running_desktop" formatted="false">"Discord is niet actief"</string>
+    <string name="discord_without_app_desktop" formatted="false">"Zonder de Discord-app"</string>
+    <string name="discord_without_app_summary_desktop" formatted="false">"Alleen nodig als de Discord-app niet op deze computer draait"</string>
+</resources>

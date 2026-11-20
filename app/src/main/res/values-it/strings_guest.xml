@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guest_name">"Ospite"</string>
+    <string name="guest_continue">"Continua senza accedere"</string>
+    <string name="guest_detail">"Sfoglia, cerca e ascolta senza account. I Mi piace restano su questo dispositivo finché non accedi; commenti e playlist richiedono un account."</string>
+</resources>

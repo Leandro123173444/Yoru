@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_section">"Ander apparaat bedienen"</string>
+    <string name="connect_this_device">"Dit apparaat"</string>
+    <string name="connect_pair_title">"Koppelen met %1$s"</string>
+    <string name="connect_enter_code">"Voer de code in die op %1$s staat."</string>
+    <string name="connect_add_by_address">"Toevoegen via adres"</string>
+    <string name="connect_address_help">"Voor Tailscale of een ander netwerk: voer het IP-adres of de naam van het apparaat in, bijv. 100.101.102.103."</string>
+    <string name="connect_device_key">"Apparaatsleutel %1$s"</string>
+    <string name="connect_device_key_help">"Controleer of het andere apparaat dezelfde sleutel toont en voer dan de code in."</string>
+    <string name="connect_already_paired">"Al gekoppeld. Het nieuwe adres is opgeslagen."</string>
+    <string name="connect_switch_title">"Bij wisselen van apparaat"</string>
+    <string name="connect_switch_keep">"Op beide door laten spelen"</string>
+    <string name="connect_switch_pause">"Hier pauzeren"</string>
+    <string name="connect_switch_move">"Afspelen verplaatsen"</string>
+    <string name="connect_output">"Uitvoer"</string>
+    <string name="connect_preset">"Preset"</string>
+    <string name="connect_sources_note">"Nummers spelen af vanuit de bronnen van dat apparaat."</string>
+    <string name="connect_reachable_at">"Bereikbaar op"</string>
+    <string name="connect_none_found">"Geen andere YORU-apparaten gevonden. Zet daar bediening op afstand aan en zoek opnieuw."</string>
+    <string name="connect_settings_title">"YORU Connect"</string>
+    <string name="connect_settings_summary">"Bedien andere YORU-apparaten of laat ze dit apparaat bedienen"</string>
+    <string name="connect_continue">"Doorgaan"</string>
+    <string name="connect_this_key">"Sleutel van dit apparaat: %1$s"</string>
+    <string name="connect_settings_link">"Koppelcode, adressen en apparaten"</string>
+    <string name="connect_devices">"Apparaten"</string>
+    <string name="connect_guide_title">"Zo maak je verbinding"</string>
+    <string name="connect_guide_host">"Zet op het apparaat dat de muziek moet afspelen Bediening op afstand toestaan aan en tik op Koppelcode tonen."</string>
+    <string name="connect_guide_pick">"Open op het apparaat waarmee je bedient Afspelen op in de speler, kies dat apparaat en vul de code in. Koppelen hoeft maar één keer."</string>
+    <string name="connect_guide_network">"Houd beide op hetzelfde wifi-netwerk. Gebruik op een ander netwerk, zoals Tailscale, Toevoegen via adres."</string>
+    <string name="connect_guide_sources">"Muziek speelt af vanuit de eigen bronnen van dat apparaat, dus log daar in bij dezelfde dienst. YouTube Music en SoundCloud werken ook als gast."</string>
+    <string name="connect_host_on">"Aan. Gekoppelde apparaten kunnen dit apparaat vinden en bedienen."</string>
+    <string name="connect_host_off">"Uit. Zet aan om een ander apparaat hier muziek te laten afspelen."</string>
+    <string name="connect_idle_connecting">"Verbinden…"</string>
+    <string name="connect_idle_empty">"Daar speelt niets. Kies een nummer om het te starten."</string>
+    <string name="connect_error_unavailable">"%1$s kan deze nummers niet afspelen. Log daar in bij dezelfde muziekdienst."</string>
+    <string name="connect_error_disabled">"Bediening op afstand staat uit op %1$s. Zet het daar aan."</string>
+    <string name="connect_error_unpaired">"%1$s accepteert dit apparaat niet meer. Koppel opnieuw."</string>
+    <string name="connect_error_unreachable">"Kan %1$s niet bereiken. Controleer of beide op hetzelfde netwerk zitten en YORU daar open is."</string>
+    <string name="connect_error_lost">"Verbinding met %1$s verbroken."</string>
+</resources>

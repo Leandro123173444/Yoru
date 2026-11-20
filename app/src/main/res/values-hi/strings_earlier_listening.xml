@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="earlier_listening_add">"YORU से पहले का सुनने का समय जोड़ें"</string>
+    <string name="earlier_listening_included">"इसमें YORU से पहले के %1$s शामिल हैं · YORU में %2$s"</string>
+    <string name="earlier_listening_title">"YORU से पहले का सुनने का समय"</string>
+    <string name="earlier_listening_body">"यह सिर्फ़ आपके कुल मिनटों में जुड़ता है। कोई प्ले, कलाकार या तारीख़ नहीं बनती।"</string>
+    <string name="earlier_listening_hours">"घंटे"</string>
+</resources>

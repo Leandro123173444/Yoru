@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="layout_classic">"Klasik"</string>
+    <string name="layout_spotlight">"Spotlight"</string>
+    <string name="layout_console">"Konsol"</string>
+    <string name="layout_drift">"Drift"</string>
+    <string name="layout_hint">"Ana Sayfa ve Kitaplığın nasıl düzenlendiği. Klasik, özgün düzendir."</string>
+    <string name="bars_title">"Çubuklar"</string>
+    <string name="bars_hint">"Mini oynatıcı ve gezinme çubuğu. Klasik, özgün olandır."</string>
+    <string name="bars_match_title">"Düzenle eşleştir"</string>
+    <string name="bars_match_hint">"Çubuklar yukarıda seçilen düzeni izler."</string>
+    <string name="search_top_result">"En iyi sonuç"</string>
+    <string name="search_own_title">"Arama için ayrı düzen"</string>
+    <string name="search_own_hint">"Arama, ana sayfa ve kitaplığı izlemek yerine kendi düzenini kullanır."</string>
+</resources>

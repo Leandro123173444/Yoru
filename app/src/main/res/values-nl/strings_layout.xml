@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="layout_classic">"Klassiek"</string>
+    <string name="layout_spotlight">"Spotlight"</string>
+    <string name="layout_console">"Console"</string>
+    <string name="layout_drift">"Drift"</string>
+    <string name="layout_hint">"Hoe Home en Bibliotheek zijn ingedeeld. Klassiek is de oorspronkelijke indeling."</string>
+    <string name="bars_title">"Balken"</string>
+    <string name="bars_hint">"De miniplayer en de navigatiebalk. Klassiek is het origineel."</string>
+    <string name="bars_match_title">"Indeling volgen"</string>
+    <string name="bars_match_hint">"De balken volgen de hierboven gekozen indeling."</string>
+    <string name="search_top_result">"Topresultaat"</string>
+    <string name="search_own_title">"Eigen indeling voor zoeken"</string>
+    <string name="search_own_hint">"Zoeken krijgt een eigen indeling in plaats van Start en Bibliotheek te volgen."</string>
+</resources>

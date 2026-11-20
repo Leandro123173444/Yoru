@@ -1,0 +1,525 @@
+package com.aurora.music.ui.screens.home
+
+import com.aurora.music.localization.appString
+import com.aurora.music.localization.asPlaylist
+import com.aurora.music.ui.theme.paperClip
+import com.aurora.music.R
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.LibraryMusic
+import androidx.compose.material.icons.outlined.PlayCircle
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import com.aurora.music.data.HomeData
+import com.aurora.music.data.HomeSection
+import com.aurora.music.data.starredQueue
+import com.aurora.music.model.Album
+import com.aurora.music.model.Song
+import com.aurora.music.ui.components.AlbumCard
+import com.aurora.music.ui.components.ArtistCircle
+import com.aurora.music.ui.components.Artwork
+import com.aurora.music.ui.components.Eyebrow
+import com.aurora.music.ui.components.PlaylistCard
+import com.aurora.music.ui.components.SectionHeader
+import com.aurora.music.ui.components.Waveform
+import com.aurora.music.ui.components.formatTime
+import com.aurora.music.ui.theme.PaperTokens
+import com.aurora.music.ui.theme.isPaperTheme
+import com.aurora.music.ui.theme.paperFrame
+import com.aurora.music.ui.theme.paperSquare
+import androidx.compose.foundation.border
+import com.aurora.music.util.accentFor
+import com.aurora.music.viewmodel.HomeUiState
+import com.aurora.music.model.accent
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.runtime.getValue
+import com.aurora.music.ui.components.StatusBarScrim
+import com.aurora.music.ui.theme.Motion
+import com.aurora.music.ui.theme.pressClickable
+import com.aurora.music.ui.theme.glassChip
+import com.aurora.music.ui.theme.glassEdge
+import com.aurora.music.ui.theme.glassShelf
+import com.kyant.backdrop.backdrops.layerBackdrop
+
+@Composable
+fun HomeScreen(
+    contentPadding: PaddingValues,
+    state: HomeUiState,
+    username: String,
+    avatarUrl: String = "",
+    onOpenDrawer: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onOpenDetail: (String, String) -> Unit,
+    onPlayAlbum: (String) -> Unit,
+    onPlayAll: (List<Song>, Int) -> Unit,
+    onLoadMore: () -> Unit = {},
+    onRetry: () -> Unit = {},
+    onSelectFeed: (String) -> Unit = {},
+    onOpenNotifications: () -> Unit = {},
+    onAddSource: () -> Unit = {},
+    mixes: List<com.aurora.music.foryou.GeneratedMix> = emptyList(),
+    onPlayCollection: (kind: String, id: String, shuffle: Boolean) -> Unit = { _, _, _ -> },
+    sourceLabel: String = "",
+    onOpenSignalPath: (() -> Unit)? = null,
+    onOpenStats: (() -> Unit)? = null,
+) {
+    // each page layout is its own file; classic is the rest of this one
+    when (com.aurora.music.ui.theme.LocalUiPrefs.current.pageLayout) {
+        com.aurora.music.data.PageLayout.SPOTLIGHT -> return HomeSpotlight(contentPadding, state, username, avatarUrl, onOpenDrawer, onOpenSettings,
+            onOpenDetail, onPlayAlbum, onPlayAll, onLoadMore, onRetry, onSelectFeed, onOpenNotifications, onAddSource, mixes, onPlayCollection)
+        com.aurora.music.data.PageLayout.CONSOLE -> return HomeConsole(contentPadding, state, username, avatarUrl, sourceLabel, onOpenDrawer, onOpenSettings,
+            onOpenDetail, onPlayAlbum, onPlayAll, onLoadMore, onRetry, onSelectFeed, onOpenNotifications, onAddSource, mixes, onPlayCollection,
+            onOpenSignalPath, onOpenStats)
+        com.aurora.music.data.PageLayout.DRIFT -> return HomeDrift(contentPadding, state, username, avatarUrl, sourceLabel, onOpenDrawer, onOpenSettings,
+            onOpenDetail, onPlayAlbum, onPlayAll, onLoadMore, onRetry, onSelectFeed, onOpenNotifications, onAddSource, mixes, onPlayCollection)
+    }
+    val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val hiddenSongs = com.aurora.music.ui.components.LocalHiddenSongs.current
+    val data = androidx.compose.runtime.remember(state.data, hiddenSongs) { state.data.copy(starred = hiddenSongs.visible(state.data.starred)) }
+    val ui = com.aurora.music.ui.theme.LocalUiPrefs.current
+    val hidden = ui.hiddenHomeSections
+    val tablet = com.aurora.music.ui.layout.LocalWindowLayout.current.useNavigationRail
+    val heroScale = if (tablet) ui.tabletHeroScale else 1f
+    val favouriteScale = if (tablet) ui.tabletFavouriteScale else 1f
+    val nothingToShow = state.nothingToShow(data)
+    val glass = com.aurora.music.ui.theme.isGlassTheme()
+    Box {
+    LazyColumn(
+        Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(
+            top = topInset + 8.dp,
+            bottom = contentPadding.calculateBottomPadding() + 24.dp,
+        ),
+        verticalArrangement = Arrangement.spacedBy(if (glass) 16.dp else 26.dp),
+    ) {
+        item {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                HomeAvatar(username, avatarUrl, onOpenDrawer)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Eyebrow(greeting(), MaterialTheme.colorScheme.primary)
+                    Text(username.ifBlank { appString(R.string.text_listener_37ea46) }, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                if (state.feeds.size > 1) {
+                    // cycles library, youtube music and spotify in turn
+                    val next = state.feeds[(state.feeds.indexOfFirst { it.id == state.selectedFeed } + 1).mod(state.feeds.size)]
+                    IconPill(com.aurora.music.ui.components.sourceViewIcon(state.selectedFeed),
+                        appString(R.string.text_switch_to_home_42c520, (next.label))) { onSelectFeed(next.id) }
+                    Spacer(Modifier.width(8.dp))
+                }
+                com.aurora.music.ui.screens.stats.RecapInboxButton(onOpenNotifications)
+                Spacer(Modifier.width(8.dp))
+                IconPill(Icons.Outlined.Settings, appString(R.string.text_settings_c7f73b), onClick = onOpenSettings)
+            }
+        }
+
+        if (mixes.isNotEmpty() && state.selectedFeed == "library") {
+            val rows = mixes.partition { it.kind != com.aurora.music.foryou.MixKind.STATION }
+            listOf(R.string.foryou_title to rows.first, R.string.foryou_stations to rows.second).forEach { (title, row) ->
+                if (row.isNotEmpty()) item(key = "mixes:$title") {
+                    val tiles = androidx.compose.runtime.remember(row) { row.map { it.asPlaylist() } }
+                    Column(Modifier.glassShelf()) {
+                    SectionHeader(appString(title), Modifier.padding(horizontal = 16.dp))
+                    Spacer(Modifier.height(10.dp))
+                    LazyRow(contentPadding = PaddingValues(horizontal = 8.dp)) {
+                        items(tiles.size, key = { tiles[it].id }) { i ->
+                            // mix names run long in some languages and have no artwork to tell them apart
+                            PlaylistCard(tiles[i], onClick = { onOpenDetail(com.aurora.music.foryou.MIX_KIND, tiles[i].id) }, titleLines = 2)
+                        }
+                    }
+                    }
+                }
+            }
+        }
+
+        if (state.loading && data == HomeData()) {
+            item {
+                Box(Modifier.fillMaxWidth().height(320.dp), contentAlignment = Alignment.Center) {
+                    com.aurora.music.ui.components.LottieLoader(modifier = Modifier.size(80.dp))
+                }
+            }
+            return@LazyColumn
+        }
+
+        if (nothingToShow) {
+            item(key = "empty") { HomeEmptyState(onAddSource) }
+            return@LazyColumn
+        }
+
+
+        data.sections.forEach { section ->
+            item(key = "feed:${section.id}") { Box(Modifier.glassShelf()) { com.aurora.music.ui.components.FeedSection(section, onOpenDetail, onPlayAll) } }
+        }
+        if (data.continuation != null || state.error != null) {
+            item(key = "feed-more") { HomeFeedMore(state, onLoadMore, onRetry) }
+        }
+
+        if (data.newReleases.isNotEmpty() && HomeSection.HERO !in hidden) {
+            item {
+                val heroItems = data.newReleases.take(5)
+                val pagerState = rememberPagerState(pageCount = { heroItems.size })
+                Column {
+                    HorizontalPager(
+                        state = pagerState,
+                        pageSize = if (tablet) androidx.compose.foundation.pager.PageSize.Fixed(400.dp * heroScale)
+                            else androidx.compose.foundation.pager.PageSize.Fill,
+                        contentPadding = PaddingValues(horizontal = if (glass) 12.dp else 16.dp),
+                        pageSpacing = 12.dp,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { page ->
+                        HeroCard(heroItems[page], onOpenDetail, onPlayAlbum, height = 210.dp * heroScale)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        if (tablet) Modifier.padding(start = 16.dp).width(400.dp * heroScale) else Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        repeat(heroItems.size) { i ->
+                            val active = pagerState.currentPage == i
+                            val dot by animateDpAsState(if (active) 22.dp else 6.dp, Motion.state(), label = "heroDot")
+                            val tint by animateColorAsState(if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f), Motion.state(), label = "heroDotTint")
+                            Box(
+                                Modifier.padding(horizontal = 3.dp).height(6.dp)
+                                    .width(dot)
+                                    .clip(paperSquare(RoundedCornerShape(50)))
+                                    .background(tint),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (data.recentlyPlayed.isNotEmpty() && HomeSection.RECENT !in hidden) {
+            item {
+                Column(Modifier.glassShelf()) {
+                SectionHeader(appString(R.string.text_jump_back_in_1d9181), Modifier.padding(horizontal = 16.dp))
+                Spacer(Modifier.height(12.dp))
+                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(data.recentlyPlayed.size) { i ->
+                        val a = data.recentlyPlayed[i]
+                        OverlayTile(a.title, a.artworkUrl, accentFor(a.id)) { onOpenDetail("album", a.id) }
+                    }
+                }
+                }
+            }
+        }
+
+        if (data.playlists.isNotEmpty() && HomeSection.PLAYLISTS !in hidden) {
+            item {
+                Column(Modifier.glassShelf()) {
+                SectionHeader(appString(R.string.text_your_playlists_df03eb), Modifier.padding(horizontal = 16.dp))
+                Spacer(Modifier.height(10.dp))
+                LazyRow(contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    items(data.playlists.size) { i ->
+                        PlaylistCard(data.playlists[i], onClick = { onOpenDetail("playlist", data.playlists[i].id) })
+                    }
+                }
+                }
+            }
+        }
+
+        val featured = data.starred.firstOrNull()
+        if (featured != null && HomeSection.FAVOURITE !in hidden) {
+            item {
+                Column(Modifier.glassShelf(featured.accent).padding(horizontal = 16.dp)) {
+                    SectionHeader(appString(R.string.text_from_your_favourites_d39722))
+                    Spacer(Modifier.height(12.dp))
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .then(if (glass) Modifier else Modifier.paperFrame(RoundedCornerShape(20.dp), {
+                                background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.surfaceContainerHigh, featured.accent.copy(alpha = 0.20f))))
+                            }))
+                            .pressClickable { starredQueue(state.allStarred, data.starred, featured).let { (songs, at) -> onPlayAll(songs, at) } }
+                            .padding(if (glass) 0.dp else 16.dp * favouriteScale),
+                    ) {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Artwork(featured.artworkUrl, featured.accent, Modifier.size(56.dp * favouriteScale), corner = 14.dp)
+                                Spacer(Modifier.width(14.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Eyebrow(appString(R.string.text_starred_5f1f99), featured.accent)
+                                    Spacer(Modifier.height(2.dp))
+                                    Text(featured.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(featured.artist, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                }
+                                Box(Modifier.size(46.dp * favouriteScale).then(
+                                    if (glass) Modifier.glassChip(selected = true)
+                                    else Modifier.paperFrame(CircleShape, { this }, fill = MaterialTheme.colorScheme.primary).background(MaterialTheme.colorScheme.primary)),
+                                    contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Filled.PlayArrow, appString(R.string.text_play_5d12bd), tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp * favouriteScale))
+                                }
+                            }
+                            Spacer(Modifier.height(14.dp * favouriteScale))
+                            Waveform(progress = 0.0f, accent = featured.accent, onSeek = {}, seed = featured.id.hashCode(),
+                                barCount = if (tablet) 72 else 56, height = 40.dp * favouriteScale)
+                            Spacer(Modifier.height(8.dp * favouriteScale))
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("0:00", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(formatTime(featured.durationSec), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (data.mostPlayed.isNotEmpty() && HomeSection.MOST !in hidden) {
+            item {
+                Column(Modifier.glassShelf()) {
+                SectionHeader(appString(R.string.text_most_played_14202e), Modifier.padding(horizontal = 16.dp))
+                Spacer(Modifier.height(10.dp))
+                LazyRow(contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    items(data.mostPlayed.size) { i ->
+                        AlbumCard(data.mostPlayed[i], onClick = { onOpenDetail("album", data.mostPlayed[i].id) })
+                    }
+                }
+                }
+            }
+        }
+
+        if (data.random.isNotEmpty() && HomeSection.RECOMMENDED !in hidden) {
+            item {
+                Column(Modifier.glassShelf()) {
+                SectionHeader(appString(R.string.text_recommended_albums_36271e), Modifier.padding(horizontal = 16.dp))
+                Spacer(Modifier.height(10.dp))
+                LazyRow(contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    items(data.random.size) { i ->
+                        AlbumCard(data.random[i], onClick = { onOpenDetail("album", data.random[i].id) })
+                    }
+                }
+                }
+            }
+        }
+
+        if (data.artists.isNotEmpty() && HomeSection.ARTISTS !in hidden) {
+            item {
+                Column(Modifier.glassShelf()) {
+                SectionHeader(appString(R.string.text_artists_1528d8), Modifier.padding(horizontal = 16.dp))
+                Spacer(Modifier.height(10.dp))
+                LazyRow(contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    items(data.artists.size) { i ->
+                        ArtistCircle(data.artists[i], onClick = { onOpenDetail("artist", data.artists[i].id) })
+                    }
+                }
+                }
+            }
+        }
+
+        if (data.newReleases.isNotEmpty() && HomeSection.NEW !in hidden) {
+            item {
+                Column(Modifier.glassShelf()) {
+                SectionHeader(appString(R.string.text_new_releases_3cdd02), Modifier.padding(horizontal = 16.dp))
+                Spacer(Modifier.height(10.dp))
+                LazyRow(contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    items(data.newReleases.size) { i ->
+                        AlbumCard(data.newReleases[i], onClick = { onOpenDetail("album", data.newReleases[i].id) })
+                    }
+                }
+                }
+            }
+        }
+    }
+    StatusBarScrim(Modifier.align(Alignment.TopCenter))
+    }
+}
+
+internal fun HomeUiState.nothingToShow(data: HomeData): Boolean = !loading && error == null && data.continuation == null &&
+    data.sections.isEmpty() && data.newReleases.isEmpty() && data.recentlyPlayed.isEmpty() && data.playlists.isEmpty() &&
+    data.starred.isEmpty() && data.mostPlayed.isEmpty() && data.random.isEmpty() && data.artists.isEmpty()
+
+@Composable
+internal fun HomeAvatar(username: String, avatarUrl: String, onOpenDrawer: () -> Unit) {
+    Box(
+        Modifier.size(44.dp)
+            .paperFrame(CircleShape, { background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.tertiary))) },
+                fill = MaterialTheme.colorScheme.primary)
+            .clickable(onClick = onOpenDrawer),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (avatarUrl.isNotBlank()) {
+            com.aurora.music.ui.components.Artwork(avatarUrl, MaterialTheme.colorScheme.primary, Modifier.matchParentSize(), corner = if (isPaperTheme()) 0.dp else 22.dp)
+        } else {
+            Text(username.take(2).uppercase().ifBlank { appString(R.string.text_me_b4d362) }, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onPrimary)
+        }
+    }
+}
+
+@Composable
+internal fun HomeEmptyState(onAddSource: () -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 96.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier.size(88.dp).paperClip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
+                .pressClickable(onClickLabel = appString(R.string.home_add_source), onClick = onAddSource),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.Add, appString(R.string.home_add_source), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
+        }
+        Spacer(Modifier.height(20.dp))
+        Text(appString(R.string.home_empty_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+        Text(appString(R.string.home_empty_body), style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.widthIn(max = 420.dp))
+        Spacer(Modifier.height(20.dp))
+        com.aurora.music.ui.theme.Button(onClick = onAddSource) {
+            Icon(Icons.Filled.Add, null, Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(appString(R.string.home_add_source))
+        }
+    }
+}
+
+@Composable
+internal fun HomeFeedMore(state: HomeUiState, onLoadMore: () -> Unit, onRetry: () -> Unit, gutter: androidx.compose.ui.unit.Dp = 16.dp) {
+    val continuation = state.data.continuation
+    androidx.compose.runtime.LaunchedEffect(continuation) {
+        if (continuation != null && state.error == null) onLoadMore()
+    }
+    Column(Modifier.fillMaxWidth().padding(horizontal = gutter), horizontalAlignment = Alignment.CenterHorizontally) {
+        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+        Crossfade(state.loadingMore, animationSpec = Motion.state(), label = "feedMore") { busy ->
+            Box(Modifier.fillMaxWidth().heightIn(min = 40.dp), contentAlignment = Alignment.Center) {
+                if (busy) androidx.compose.material3.CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                else com.aurora.music.ui.theme.OutlinedButton(onClick = if (continuation != null) onLoadMore else onRetry) {
+                    Text(if (state.error != null) appString(R.string.text_try_again_042c86) else appString(R.string.text_more_recommendations_5fd054))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeroCard(album: Album, onOpenDetail: (String, String) -> Unit, onPlayAlbum: (String) -> Unit, height: androidx.compose.ui.unit.Dp = 210.dp) {
+    val accent = accentFor(album.id)
+    val paper = isPaperTheme()
+    val glass = com.aurora.music.ui.theme.isGlassTheme()
+    // the play button bends the cover under it, so the cover and its scrim are recorded for it
+    val cover = if (glass && com.aurora.music.ui.theme.liveGlassSupported) com.kyant.backdrop.backdrops.rememberLayerBackdrop() else null
+    val shape = paperSquare(RoundedCornerShape(24.dp))
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(shape)
+            .then(if (glass) Modifier.glassEdge(shape, com.aurora.music.ui.theme.glassIsDark()) else Modifier)
+            .pressClickable { onOpenDetail("album", album.id) },
+    ) {
+        Box(Modifier.matchParentSize().then(if (cover != null) Modifier.layerBackdrop(cover) else Modifier)) {
+        Artwork(album.artworkUrl, accent, Modifier.matchParentSize(), corner = if (paper || glass) 0.dp else 24.dp)
+        Box(
+            Modifier.matchParentSize().background(
+                Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.30f), Color.Black.copy(alpha = 0.88f)))
+            )
+        )
+        }
+        Column(Modifier.align(Alignment.BottomStart).padding(20.dp)) {
+            Eyebrow(appString(R.string.text_new_release_f0ec22), if (paper) Color.White else accent)
+            Spacer(Modifier.height(6.dp))
+            Text(album.title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(album.artist, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.85f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Spacer(Modifier.height(12.dp))
+            if (glass) com.aurora.music.ui.components.glass.GlassAction(Icons.Filled.PlayArrow, appString(R.string.text_play_5d12bd),
+                onClick = { onPlayAlbum(album.id) }, backdrop = cover)
+            else Row(
+                // paper: the site's primary button, rose with ink type and an ink rule
+                Modifier.paperFrame(RoundedCornerShape(50), { background(Color.White) }, fill = PaperTokens.rose)
+                    .pressClickable { onPlayAlbum(album.id) }.padding(horizontal = 20.dp, vertical = 9.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val ink = if (paper) PaperTokens.ink else Color.Black
+                Icon(Icons.Filled.PlayArrow, null, tint = ink, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(appString(R.string.text_play_5d12bd), style = MaterialTheme.typography.labelLarge, fontWeight = if (paper) null else FontWeight.Black, color = ink)
+            }
+        }
+        if (paper) Box(Modifier.matchParentSize().border(1.dp, PaperTokens.ink))
+    }
+}
+
+@Composable
+private fun OverlayTile(title: String, artUrl: String, accent: Color, onClick: () -> Unit) {
+    Box(
+        Modifier.size(160.dp).clip(paperSquare(RoundedCornerShape(18.dp))).pressClickable(onClick = onClick),
+    ) {
+        Artwork(artUrl, accent, Modifier.matchParentSize(), corner = if (isPaperTheme()) 0.dp else 18.dp)
+        if (isPaperTheme()) Box(Modifier.matchParentSize().border(1.dp, PaperTokens.ink))
+        Box(
+            Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f))))
+        )
+        Text(
+            title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Black,
+            color = Color.White,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
+        )
+    }
+}
+
+@Composable
+internal fun IconPill(icon: androidx.compose.ui.graphics.vector.ImageVector, desc: String, onClick: () -> Unit) {
+    if (com.aurora.music.ui.theme.isGlassTheme()) {
+        com.aurora.music.ui.components.glass.GlassButton(onClick, com.aurora.music.ui.theme.LocalGlassAmbient.current,
+            Modifier.size(44.dp), contentDescription = desc) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+        }
+        return
+    }
+    Box(
+        Modifier.size(40.dp).paperFrame(CircleShape, { background(MaterialTheme.colorScheme.surfaceContainerHigh) }).clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, desc, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp)) }
+}
+
+internal fun greeting(): String = appString(R.string.text_good_evening_47f6d5)

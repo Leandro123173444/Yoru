@@ -1,0 +1,348 @@
+package com.aurora.music.viewmodel
+
+import com.aurora.music.localization.appString
+import com.aurora.music.R
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.aurora.music.AuroraApplication
+import com.aurora.music.data.ServerType
+import com.aurora.music.data.Session
+import com.aurora.music.data.SpotifyWebBackend
+import com.aurora.music.data.SpotifyWebProfile
+import com.aurora.music.data.remote.JellyfinClient
+import com.aurora.music.data.remote.PlexClient
+import com.aurora.music.data.remote.PlexException
+import com.aurora.music.data.remote.QuickConnectException
+import com.aurora.music.data.remote.SpotifyAuth
+import com.aurora.music.data.remote.SpotifyClient
+import com.aurora.music.data.remote.SubsonicClient
+import com.aurora.music.data.remote.appClientInfo
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+enum class AuthStep { TYPE, SERVER, CREDENTIALS, SPOTIFY, YOUTUBE_MUSIC, SOUNDCLOUD, APPLE_MUSIC }
+
+data class AuthUiState(
+    val step: AuthStep = AuthStep.TYPE,
+    val type: ServerType = ServerType.SUBSONIC,
+    val scheme: String = "http://",
+    val host: String = "",
+    val username: String = "",
+    val password: String = "",
+    val loading: Boolean = false,
+    val error: String? = null,
+    val pendingAuthUrl: String? = null,
+    val quickConnectCode: String? = null,
+)
+
+class AuthViewModel(app: Application) : AndroidViewModel(app) {
+
+    private val container = (app as AuroraApplication).container
+
+    private val _state = MutableStateFlow(AuthUiState())
+    val state: StateFlow<AuthUiState> = _state.asStateFlow()
+
+    private var spotifyVerifier: String? = null
+
+    init {
+        // aurora://spotify redirect caught in MainActivity delivers the oauth code here
+        viewModelScope.launch { container.spotifyRedirect.collect { code -> completeSpotify(code) } }
+    }
+
+    private var spotifyClientId: String? = null
+    private var signInJob: Job? = null
+
+    fun reset() {
+        signInJob?.cancel()
+        signInJob = null
+        _state.update { AuthUiState() }
+    }
+
+    fun useSaved(session: Session, onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            container.applySession(session)
+            onDone()
+        }
+    }
+
+    fun selectType(type: ServerType) {
+        _state.update { if (it.type != type) it.copy(password = "") else it }
+        if (type == ServerType.YOUTUBE_MUSIC || type == ServerType.SOUNDCLOUD || type == ServerType.APPLE_MUSIC) {
+            val step = when (type) { ServerType.SOUNDCLOUD -> AuthStep.SOUNDCLOUD; ServerType.APPLE_MUSIC -> AuthStep.APPLE_MUSIC; else -> AuthStep.YOUTUBE_MUSIC }
+            _state.update { it.copy(type = type, step = step, error = null) }
+            return
+        }
+        if (type == ServerType.SPOTIFY) {
+            _state.update { it.copy(type = ServerType.SPOTIFY, step = AuthStep.SPOTIFY, error = null) }
+            return
+        }
+        _state.update { it.copy(type = type, step = AuthStep.SERVER, error = null) }
+    }
+
+    fun connectSpotify(clientId: String) {
+        val id = clientId.trim()
+        if (id.isBlank()) { _state.update { it.copy(error = appString(R.string.text_paste_your_spotify_app_s_client_id_first_f2d13e)) }; return }
+        spotifyClientId = id
+        viewModelScope.launch { runCatching { container.settingsStore.setSpotifyClientId(id) } }
+        val verifier = SpotifyAuth.newVerifier()
+        spotifyVerifier = verifier
+        _state.update { it.copy(error = null, pendingAuthUrl = SpotifyAuth.authorizeUrl(id, verifier, "aurora")) }
+    }
+
+    fun authUrlOpened() = _state.update { it.copy(pendingAuthUrl = null) }
+
+    fun connectYouTubeMusic(webSession: String) {
+        if (_state.value.loading) return
+        _state.update { it.copy(loading = true, error = null) }
+        viewModelScope.launch {
+            var reference: String? = null
+            try {
+                val auth = com.aurora.music.data.remote.YouTubeMusicWebSession.decode(webSession)
+                val client = com.aurora.music.data.remote.YouTubeMusicClient(session = { auth })
+                val (name, handle, photo) = com.aurora.music.data.YouTubeMusicBackend.account(client, auth.dataSyncId)
+                reference = withContext(Dispatchers.IO) { container.youtubeMusicCredentials.save(auth.encode()) }
+                val session = Session(com.aurora.music.data.remote.YouTubeMusicClient.ORIGIN, name, "", reference,
+                    ServerType.YOUTUBE_MUSIC, userId = handle, imageUrl = photo)
+                val previous = container.settingsStore.savedSessions.first().filter { it.type == ServerType.YOUTUBE_MUSIC && it.userId == handle }
+                container.applySession(session)
+                previous.filter { it.token != reference }.forEach { container.youtubeMusicCredentials.remove(it.token) }
+                _state.update { it.copy(loading = false, error = null) }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                reference?.let { container.youtubeMusicCredentials.remove(it) }
+                _state.update { it.copy(loading = false, error = if (e is java.io.IOException) friendlyError(e) else appString(R.string.text_could_not_connect_youtube_music_please_try_again_e327a1)) }
+            }
+        }
+    }
+
+    fun connectSoundCloud(webSession: String) {
+        if (_state.value.loading) return
+        _state.update { it.copy(loading = true, error = null) }
+        viewModelScope.launch {
+            var reference: String? = null
+            try {
+                var auth = com.aurora.music.data.remote.SoundCloudWebSession.decode(webSession)
+                val client = com.aurora.music.data.remote.SoundCloudClient({ auth }, { auth = it }, container.http)
+                val (id, name, avatar) = com.aurora.music.data.SoundCloudBackend.profile(client)
+                reference = withContext(Dispatchers.IO) { container.soundcloudCredentials.save(auth.encode()) }
+                val session = Session(com.aurora.music.data.remote.SoundCloudClient.WEB, name, "", reference,
+                    ServerType.SOUNDCLOUD, userId = id, imageUrl = avatar)
+                val previous = container.settingsStore.savedSessions.first().filter { it.type == ServerType.SOUNDCLOUD && it.userId == id }
+                container.applySession(session)
+                previous.filter { it.token != reference }.forEach { container.soundcloudCredentials.remove(it.token) }
+                _state.update { it.copy(loading = false, error = null) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                reference?.let { container.soundcloudCredentials.remove(it) }
+                _state.update { it.copy(loading = false, error = if (e is java.io.IOException) friendlyError(e) else appString(R.string.soundcloud_connect_failed)) }
+            }
+        }
+    }
+
+    fun connectAppleMusic(webSession: String) {
+        if (_state.value.loading) return
+        _state.update { it.copy(loading = true, error = null) }
+        viewModelScope.launch {
+            var reference: String? = null
+            try {
+                val login = com.aurora.music.data.remote.AppleMusicWebSession.decode(webSession)
+                val client = com.aurora.music.data.remote.AppleMusicClient({ login }, container.http,
+                    { container.settingsStore.appleMusicToken.first() }, { container.settingsStore.setAppleMusicToken(it) })
+                val profile = com.aurora.music.data.AppleMusicBackend.profile(client, login)
+                reference = withContext(Dispatchers.IO) {
+                    container.appleMusicCredentials.save(com.aurora.music.data.remote.AppleMusicWebSession(login.userToken, profile.storefront).encode())
+                }
+                val session = Session(com.aurora.music.data.remote.AppleMusicClient.WEB, profile.name, "", reference,
+                    ServerType.APPLE_MUSIC, userId = profile.userId, imageUrl = profile.imageUrl)
+                val previous = container.settingsStore.savedSessions.first().filter { it.type == ServerType.APPLE_MUSIC && it.userId == profile.userId }
+                container.applySession(session)
+                previous.filter { it.token != reference }.forEach { container.appleMusicCredentials.remove(it.token) }
+                _state.update { it.copy(loading = false, error = null) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                reference?.let { container.appleMusicCredentials.remove(it) }
+                _state.update { it.copy(loading = false, error = if (e is java.io.IOException) friendlyError(e) else appString(R.string.apple_music_connect_failed)) }
+            }
+        }
+    }
+
+    fun continueAsGuest() {
+        val type = _state.value.type
+        if (_state.value.loading || !type.supportsGuest) return
+        viewModelScope.launch { container.applySession(Session.guest(type, appString(R.string.guest_name))) }
+    }
+
+    fun signInLocal() {
+        if (_state.value.loading) return
+        _state.update { it.copy(type = ServerType.LOCAL, loading = true, error = null) }
+        viewModelScope.launch {
+            val session = Session(
+                server = appString(R.string.text_on_this_device_a7f962),
+                username = appString(R.string.text_local_library_a4b3e0),
+                salt = "",
+                token = "local",
+                type = ServerType.LOCAL,
+            )
+            container.applySession(session)
+            _state.update { it.copy(loading = false, error = null) }
+        }
+    }
+
+    // the saved account holds only an encrypted reference to spotify's session cookie
+    fun connectSpotifyWeb(sessionCookie: String, profile: SpotifyWebProfile?) {
+        if (sessionCookie.isBlank() || profile == null) {
+            _state.update { it.copy(loading = false, error = appString(R.string.spotify_web_failed)) }
+            return
+        }
+        _state.update { it.copy(loading = true, error = null) }
+        viewModelScope.launch {
+            val reference = withContext(Dispatchers.IO) { container.spotifyCredentials.save(sessionCookie) }
+            // signing the same account in again replaces its saved login instead of leaving the old one behind
+            val previous = container.settingsStore.savedSessions.first()
+                .filter { it.type == ServerType.SPOTIFY && it.salt == SpotifyWebBackend.WEB_PLAYER && it.userId == profile.userId }
+            container.applySession(SpotifyWebBackend.session(profile, reference))
+            previous.filter { it.token != reference }.forEach { container.spotifyCredentials.remove(it.token) }
+            _state.update { it.copy(loading = false, error = null) }
+        }
+    }
+
+    private fun completeSpotify(code: String) {
+        val verifier = spotifyVerifier ?: return
+        _state.update { it.copy(loading = true, error = null) }
+        viewModelScope.launch {
+            val clientId = spotifyClientId ?: container.spotifyClientId
+            val session = withContext(Dispatchers.IO) { SpotifyClient.login(clientId, code, verifier) }
+            if (session != null) {
+                container.applySession(session)
+                _state.update { it.copy(loading = false, error = null) }
+            } else {
+                _state.update { it.copy(loading = false, error = appString(R.string.text_spotify_sign_in_failed_try_again_dc8110)) }
+            }
+        }
+    }
+    fun onScheme(scheme: String) = _state.update { it.copy(scheme = scheme, error = null) }
+    fun onHost(v: String) = _state.update {
+        val value = v.trim()
+        val scheme = if (it.type == ServerType.PLEX) {
+            listOf("https://", "http://").firstOrNull { prefix -> value.startsWith(prefix, ignoreCase = true) }
+        } else null
+        it.copy(scheme = scheme ?: it.scheme, host = if (scheme != null) value.drop(scheme.length) else value, error = null)
+    }
+    fun onUsername(v: String) = _state.update { it.copy(username = v, error = null) }
+    fun onPassword(v: String) = _state.update { it.copy(password = v, error = null) }
+
+    fun back() = _state.update {
+        when (it.step) {
+            AuthStep.CREDENTIALS -> it.copy(step = AuthStep.SERVER, error = null)
+            AuthStep.SERVER -> it.copy(step = AuthStep.TYPE, error = null)
+            AuthStep.SPOTIFY -> it.copy(step = AuthStep.TYPE, error = null, pendingAuthUrl = null)
+            AuthStep.YOUTUBE_MUSIC, AuthStep.SOUNDCLOUD, AuthStep.APPLE_MUSIC -> it.copy(step = AuthStep.TYPE, error = null)
+            AuthStep.TYPE -> it
+        }
+    }
+
+    val canContinueServer: Boolean get() = _state.value.host.isNotBlank()
+    fun continueToCredentials() {
+        if (canContinueServer) _state.update { it.copy(step = AuthStep.CREDENTIALS, error = null) }
+    }
+
+    val canSubmit: Boolean
+        get() = with(_state.value) {
+            (type == ServerType.PLEX || username.isNotBlank()) && password.isNotBlank() && !loading
+        }
+
+    fun signIn(onDone: () -> Unit) {
+        val s = _state.value
+        if (s.loading || !canSubmit) return
+        _state.update { it.copy(loading = true, error = null) }
+        signInJob = viewModelScope.launch {
+            val server = s.scheme + s.host.trim()
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    when (s.type) {
+                        ServerType.SUBSONIC -> {
+                            val session = SubsonicClient.buildSession(server, s.username, s.password)
+                            val resp = SubsonicClient(session).api.ping().response
+                            if (!resp.isOk) throw IllegalStateException(resp.error?.message ?: appString(R.string.text_login_rejected_3f73ee))
+                            session
+                        }
+                        ServerType.JELLYFIN -> JellyfinClient.authenticate(server, s.username, s.password, appClientInfo)
+                        ServerType.PLEX -> PlexClient.authenticate(server, s.password.trim(), appClientInfo)
+                        ServerType.SPOTIFY -> throw IllegalStateException(appString(R.string.text_spotify_uses_the_connect_button_not_this_form_17d56a))
+                        ServerType.YOUTUBE_MUSIC -> throw IllegalStateException(appString(R.string.text_youtube_music_uses_google_sign_in_0ba1e7))
+                        ServerType.SOUNDCLOUD -> throw IllegalStateException(appString(R.string.soundcloud_connect_failed))
+                        ServerType.APPLE_MUSIC -> throw IllegalStateException(appString(R.string.apple_music_connect_failed))
+                        ServerType.LOCAL -> throw IllegalStateException(appString(R.string.text_local_mode_doesn_t_use_this_form_78c2dc))
+                        ServerType.EXTENSION -> throw IllegalStateException(appString(R.string.text_enable_this_source_in_advanced_audio_extensions_579558))
+                    }
+                }
+            }
+            result.onSuccess { session ->
+                ensureActive()
+                container.applySession(session)
+                ensureActive()
+                _state.update { it.copy(loading = false, error = null, password = "") }
+                onDone()
+            }.onFailure { e ->
+                if (e is CancellationException) throw e
+                _state.update { it.copy(loading = false, error = friendlyError(e, s.type)) }
+            }
+        }
+    }
+
+    fun quickConnect(onDone: () -> Unit) {
+        val s = _state.value
+        if (s.loading || s.host.isBlank()) return
+        _state.update { it.copy(loading = true, error = null) }
+        signInJob = viewModelScope.launch {
+            try {
+                val session = withContext(Dispatchers.IO) {
+                    JellyfinClient.quickConnect(s.scheme + s.host.trim(), appClientInfo) { code -> _state.update { it.copy(quickConnectCode = code) } }
+                }
+                ensureActive()
+                container.applySession(session)
+                ensureActive()
+                _state.update { it.copy(loading = false, error = null, quickConnectCode = null) }
+                onDone()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.update { it.copy(loading = false, quickConnectCode = null, error = friendlyError(e, s.type)) }
+            }
+        }
+    }
+
+    fun cancelQuickConnect() {
+        signInJob?.cancel()
+        _state.update { it.copy(loading = false, quickConnectCode = null) }
+    }
+
+    private fun friendlyError(e: Throwable, type: ServerType? = null): String = when (e) {
+        is QuickConnectException -> appString(if (e.expired) R.string.jellyfin_quick_connect_expired else R.string.jellyfin_quick_connect_disabled)
+        is java.net.UnknownHostException -> appString(R.string.text_server_not_found_check_the_address_24bc0a)
+        is java.net.ConnectException -> appString(R.string.text_can_t_reach_the_server_1371a9)
+        is java.net.SocketTimeoutException -> appString(R.string.text_connection_timed_out_647bf9)
+        is PlexException -> if (e.statusCode in listOf(401, 403)) appString(R.string.plex_token_rejected)
+            else e.message ?: appString(R.string.text_sign_in_failed_49b78c)
+        is retrofit2.HttpException -> when {
+            type == ServerType.PLEX && e.code() in listOf(401, 403) -> appString(R.string.plex_token_rejected)
+            e.code() == 401 -> appString(R.string.text_wrong_username_or_password_85b465)
+            else -> appString(R.string.text_server_error_c28ed6, e.code())
+        }
+        else -> e.message ?: appString(R.string.text_sign_in_failed_49b78c)
+    }
+}

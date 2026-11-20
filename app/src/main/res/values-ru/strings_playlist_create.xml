@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="playlist_saved_to">"Сохраняется в %1$s"</string>
+    <string name="playlist_save_to">"Сохранить в"</string>
+    <string name="playlist_description_optional">"Описание (необязательно)"</string>
+    <string name="playlist_local_hint">"Вмещает треки из всех объединённых источников"</string>
+    <string name="playlist_smart_hint">"Заполняется сам по вашим правилам"</string>
+</resources>

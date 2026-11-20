@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="layout_classic">"Классический"</string>
+    <string name="layout_spotlight">"Spotlight"</string>
+    <string name="layout_console">"Консоль"</string>
+    <string name="layout_drift">"Дрифт"</string>
+    <string name="layout_hint">"Как устроены Главная и Медиатека. Классический — исходный макет."</string>
+    <string name="bars_title">"Панели"</string>
+    <string name="bars_hint">"Мини-плеер и панель навигации. Классический — исходный вариант."</string>
+    <string name="bars_match_title">"Как у макета"</string>
+    <string name="bars_match_hint">"Панели следуют макету, выбранному выше."</string>
+    <string name="search_top_result">"Лучший результат"</string>
+    <string name="search_own_title">"Отдельный макет поиска"</string>
+    <string name="search_own_hint">"У поиска свой макет, а не тот, что у главной и медиатеки."</string>
+</resources>

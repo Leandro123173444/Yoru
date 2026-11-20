@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_section">"控制其他设备"</string>
+    <string name="connect_this_device">"本设备"</string>
+    <string name="connect_pair_title">"与 %1$s 配对"</string>
+    <string name="connect_enter_code">"输入 %1$s 上显示的代码。"</string>
+    <string name="connect_add_by_address">"按地址添加"</string>
+    <string name="connect_address_help">"对于 Tailscale 或其他网络，请输入设备的 IP 或名称，例如 100.101.102.103。"</string>
+    <string name="connect_device_key">"设备密钥 %1$s"</string>
+    <string name="connect_device_key_help">"确认另一台设备显示相同的密钥，然后输入其代码。"</string>
+    <string name="connect_already_paired">"已配对。新地址已保存。"</string>
+    <string name="connect_switch_title">"切换设备时"</string>
+    <string name="connect_switch_keep">"两边都继续播放"</string>
+    <string name="connect_switch_pause">"在此暂停"</string>
+    <string name="connect_switch_move">"转移播放"</string>
+    <string name="connect_output">"输出"</string>
+    <string name="connect_preset">"预设"</string>
+    <string name="connect_sources_note">"歌曲从该设备自己的音源播放。"</string>
+    <string name="connect_reachable_at">"访问地址"</string>
+    <string name="connect_none_found">"未找到其他 YORU 设备。请在那台设备上开启远程控制，然后重新搜索。"</string>
+    <string name="connect_settings_title">"YORU Connect"</string>
+    <string name="connect_settings_summary">"控制其他 YORU 设备，或让它们控制本设备"</string>
+    <string name="connect_continue">"继续"</string>
+    <string name="connect_this_key">"本设备密钥：%1$s"</string>
+    <string name="connect_settings_link">"配对码、地址和设备"</string>
+    <string name="connect_devices">"设备"</string>
+    <string name="connect_guide_title">"如何连接"</string>
+    <string name="connect_guide_host">"在要播放音乐的设备上，打开“允许远程控制”，然后点按“显示配对码”。"</string>
+    <string name="connect_guide_pick">"在用来控制的设备上，打开播放器中的“播放设备”，选择该设备并输入配对码。只需配对一次。"</string>
+    <string name="connect_guide_network">"让两台设备连接同一个 Wi-Fi。在其他网络（如 Tailscale）上，请使用“按地址添加”。"</string>
+    <string name="connect_guide_sources">"音乐从该设备自己的音源播放，所以请在那台设备上登录同一服务。YouTube Music 和 SoundCloud 也支持访客模式。"</string>
+    <string name="connect_host_on">"已开启。已配对的设备可以发现并控制此设备。"</string>
+    <string name="connect_host_off">"已关闭。开启后，其他设备可以在这里播放音乐。"</string>
+    <string name="connect_idle_connecting">"正在连接…"</string>
+    <string name="connect_idle_empty">"那里没有在播放。选一首歌开始播放。"</string>
+    <string name="connect_error_unavailable">"%1$s 无法播放这些歌曲。请在那台设备上登录同一音乐服务。"</string>
+    <string name="connect_error_disabled">"%1$s 上的远程控制已关闭。请在那台设备上开启。"</string>
+    <string name="connect_error_unpaired">"%1$s 不再接受此设备。请重新配对。"</string>
+    <string name="connect_error_unreachable">"无法连接到 %1$s。请确认两台设备在同一网络中，并且那台设备上的 YORU 已打开。"</string>
+    <string name="connect_error_lost">"与 %1$s 的连接已断开。"</string>
+</resources>

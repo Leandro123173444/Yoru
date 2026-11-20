@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="soundcloud_card_detail">"Je likes, playlists en feed"</string>
+    <string name="soundcloud_connect_title">"SoundCloud koppelen"</string>
+    <string name="soundcloud_connect_subtitle">"Je likes, playlists en de artiesten die je volgt"</string>
+    <string name="soundcloud_sign_in">"Inloggen bij SoundCloud"</string>
+    <string name="soundcloud_sign_in_hint">"Log in op de pagina van SoundCloud. YORU koppelt zodra je bent ingelogd."</string>
+    <string name="soundcloud_waiting">"Log in om verder te gaan. Wordt inloggen met Google hier geweigerd, log dan in met je e-mailadres."</string>
+    <string name="soundcloud_details">"YORU gebruikt de onofficiële webinterface van SoundCloud en bewaart je login versleuteld op dit apparaat."</string>
+    <string name="soundcloud_connect_failed">"SoundCloud kon niet worden gekoppeld. Probeer het opnieuw."</string>
+    <string name="soundcloud_page_failed">"De inlogpagina kon niet laden. Controleer je verbinding en laad opnieuw."</string>
+    <string name="soundcloud_captcha_hint">"SoundCloud wil controleren of je een mens bent voordat deze wijziging wordt opgeslagen. Los het één keer op en YORU rondt de wijziging af."</string>
+    <string name="player_comments">"Reacties"</string>
+    <string name="player_soundcloud_comments">"SoundCloud-reacties"</string>
+    <string name="comments_empty">"Nog geen reacties. Wees de eerste."</string>
+    <string name="comments_none">"Hier nog geen reacties"</string>
+    <string name="comment_hint_untimed">"Reactie toevoegen…"</string>
+    <string name="comment_like_failed">"De like kon niet worden bijgewerkt. Probeer het opnieuw."</string>
+    <string name="comment_hint">"Reageer op %1$s"</string>
+    <string name="comment_post">"Plaatsen"</string>
+    <string name="comment_failed">"Je reactie kon niet worden geplaatst. Probeer het opnieuw."</string>
+    <string name="soundcloud_verify">"SoundCloud verifiëren"</string>
+    <string name="soundcloud_verify_detail">"Verstuurt likes en volgacties die wachten. SoundCloud kan eerst vragen te bewijzen dat je een mens bent."</string>
+    <string name="soundcloud_verify_done">"SoundCloud is bijgewerkt."</string>
+    <string name="soundcloud_verify_failed">"SoundCloud moet je nog verifiëren. Probeer het opnieuw."</string>
+    <string name="soundcloud_verify_waiting">"Wachtend: %1$d"</string>
+    <string name="comment_needs_verify">"SoundCloud wil controleren of je een mens bent. Ga naar Instellingen → Accounts en kies SoundCloud verifiëren."</string>
+</resources>

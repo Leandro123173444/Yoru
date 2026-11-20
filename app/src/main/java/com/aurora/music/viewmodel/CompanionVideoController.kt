@@ -1,0 +1,246 @@
+package com.aurora.music.viewmodel
+
+import android.app.Application
+import android.os.SystemClock
+import androidx.annotation.OptIn
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import com.aurora.music.model.Song
+import com.aurora.music.playback.YoutubeResolver
+import com.aurora.music.playback.VideoAudioAligner
+import com.aurora.music.playback.VideoSyncPlan
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.math.abs
+
+internal data class CompanionVideoStatus(
+    val ready: Boolean,
+    val loading: Boolean,
+    val qualityHeight: Int?,
+    val canvas: Boolean = false,
+)
+
+// - native playback advances while exoplayer buffers
+internal val Player.effectivelyPlaying: Boolean
+    get() = isPlaying || (playWhenReady && playbackState == Player.STATE_BUFFERING)
+
+@OptIn(UnstableApi::class)
+internal class CompanionVideoController(
+    private val app: Application,
+    private val scope: CoroutineScope,
+    private val resolver: YoutubeResolver,
+    private val audioPlayer: () -> Player?,
+    private val currentSong: () -> Song,
+    private val canvasFor: suspend (Song) -> String? = { null },
+    private val onStateChanged: (CompanionVideoStatus) -> Unit,
+) {
+    private var video: ExoPlayer? = null
+    private var ready = false
+    private var visible = false
+    private var loading = false
+    private var songId: String? = null
+    private var videoId: String? = null
+    private var selectedQuality: Int? = 720
+    // a canvas loops on its own instead of following the song position
+    private var canvas = false
+    private var syncPlan: VideoSyncPlan? = null
+    private var activeOffsetMs = 0L
+    private var lastSeekMs = 0L
+    private var searchJob: Job? = null
+    private var qualityJob: Job? = null
+    private var alignJob: Job? = null
+    private val aligner = VideoAudioAligner(app, resolver)
+    private val planCache = LinkedHashMap<Pair<String, String>, VideoSyncPlan>()
+
+    val player: Player? get() = video?.takeIf { ready }
+    val isReady: Boolean get() = ready
+    val isCanvas: Boolean get() = canvas && ready
+    val qualityHeight: Int? get() = selectedQuality
+
+    // a canvas request only takes the service's canvas; otherwise the youtube music video is matched
+    fun request(song: Song, wantCanvas: Boolean, onUnavailable: () -> Unit) {
+        if (song.id.isBlank() || song.artist.isBlank() || song.title.isBlank() || loading) return
+        if (songId == song.id && ready && canvas == wantCanvas) return
+        clear()
+        songId = song.id
+        loading = true
+        publish()
+        searchJob = scope.launch {
+            if (wantCanvas) {
+                val canvasUrl = runCatching { canvasFor(song) }.getOrNull()
+                ensureActive()
+                if (currentSong().id != song.id) return@launch
+                if (canvasUrl == null) {
+                    clear()
+                    onUnavailable()
+                    return@launch
+                }
+                canvas = true
+                start(canvasUrl, onUnavailable) { repeatMode = Player.REPEAT_MODE_ONE }
+                return@launch
+            }
+            val match = withContext(Dispatchers.IO) {
+                resolver.findMusicVideo(song.artist, song.title, song.durationSec)
+            }
+            ensureActive()
+            if (currentSong().id != song.id) return@launch
+            if (match == null) {
+                clear()
+                onUnavailable()
+                return@launch
+            }
+            videoId = match.videoId
+            selectedQuality = 720
+            val cacheKey = song.id to match.videoId
+            planCache[cacheKey]?.let { syncPlan = it }
+            if (!planCache.containsKey(cacheKey)) {
+                alignJob = scope.launch {
+                    val plan = runCatching { aligner.plan(song.streamUrl, match.videoId) }.getOrNull()
+                    ensureActive()
+                    if (songId != song.id || videoId != match.videoId) return@launch
+                    if (plan == null) {
+                        android.util.Log.d("CompanionVideo", "Audio alignment unavailable")
+                        return@launch
+                    }
+                    syncPlan = plan
+                    android.util.Log.d("CompanionVideo", "Audio sync plan $plan")
+                    if (planCache.size >= 64) planCache.remove(planCache.keys.first())
+                    planCache[cacheKey] = plan
+                    sync(forceSeek = true)
+                }
+            }
+            start(match.streamUrl, onUnavailable)
+        }
+    }
+
+    private fun start(url: String, onUnavailable: () -> Unit, configure: ExoPlayer.() -> Unit = {}) {
+        val candidate = ExoPlayer.Builder(app).build().apply {
+            volume = 0f
+            configure()
+            setMediaItem(MediaItem.fromUri(url))
+        }
+        video = candidate
+        candidate.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (candidate !== video || playbackState != Player.STATE_READY) return
+                if (!candidate.currentTracks.isTypeSupported(C.TRACK_TYPE_VIDEO)) {
+                    clear()
+                    onUnavailable()
+                    return
+                }
+                ready = true
+                loading = false
+                publish()
+                sync()
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                if (candidate !== video) return
+                clear()
+                onUnavailable()
+            }
+        })
+        candidate.prepare()
+    }
+
+    fun clearIfSongChanged(currentSongId: String) {
+        if (songId != null && songId != currentSongId) clear()
+    }
+
+    fun setVisible(value: Boolean) {
+        visible = value
+        sync(forceSeek = value)
+    }
+
+    fun sync(forceSeek: Boolean = false) {
+        val candidate = video ?: return
+        val audio = audioPlayer() ?: return
+        if (!ready) return
+        if (!visible || canvas) {
+            candidate.playWhenReady = visible && audio.effectivelyPlaying
+            return
+        }
+        val audioPosition = audio.currentPosition.coerceAtLeast(0)
+        val offset = syncPlan?.offsetAt(audioPosition) ?: 0L
+        val segmentChanged = offset != activeOffsetMs
+        activeOffsetMs = offset
+        val position = audioPosition + offset
+        if (position < 0) {
+            if (candidate.currentPosition > 100) candidate.seekTo(0)
+            candidate.playWhenReady = false
+            return
+        }
+        val now = SystemClock.elapsedRealtime()
+        val steadyDrift = candidate.playbackState == Player.STATE_READY && candidate.isPlaying && audio.isPlaying &&
+            abs(candidate.currentPosition - position) > 3_000 && now - lastSeekMs > 15_000
+        if (forceSeek || segmentChanged || steadyDrift) {
+            candidate.seekTo(position)
+            lastSeekMs = now
+        }
+        if (candidate.playbackParameters != audio.playbackParameters) candidate.playbackParameters = audio.playbackParameters
+        candidate.playWhenReady = audio.effectivelyPlaying
+    }
+
+    fun setQuality(height: Int?): Boolean {
+        if (!ready || canvas) return false
+        val selectedId = videoId ?: return true
+        val candidate = video ?: return true
+        val selectedSongId = songId ?: return true
+        val quality = height?.coerceAtLeast(144)
+        if (quality == selectedQuality) return true
+        qualityJob?.cancel()
+        qualityJob = scope.launch {
+            loading = true
+            publish()
+            val url = withContext(Dispatchers.IO) {
+                runCatching { resolver.resolveVisualStream(selectedId, quality) }.getOrNull()
+            }
+            ensureActive()
+            if (selectedSongId != songId || candidate !== video) return@launch
+            loading = false
+            publish()
+            if (url == null) return@launch
+            selectedQuality = quality
+            publish()
+            candidate.setMediaItem(MediaItem.fromUri(url),
+                ((audioPlayer()?.currentPosition ?: 0L).let { it + (syncPlan?.offsetAt(it) ?: 0L) }).coerceAtLeast(0L))
+            candidate.prepare()
+            sync()
+        }
+        return true
+    }
+
+    fun clear() {
+        searchJob?.cancel()
+        searchJob = null
+        qualityJob?.cancel()
+        qualityJob = null
+        alignJob?.cancel()
+        alignJob = null
+        video?.release()
+        video = null
+        songId = null
+        videoId = null
+        selectedQuality = 720
+        canvas = false
+        syncPlan = null
+        activeOffsetMs = 0L
+        lastSeekMs = 0L
+        ready = false
+        visible = false
+        loading = false
+        publish()
+    }
+
+    private fun publish() {
+        onStateChanged(CompanionVideoStatus(ready, loading, selectedQuality.takeIf { ready && !canvas }, canvas && ready))
+    }
+}

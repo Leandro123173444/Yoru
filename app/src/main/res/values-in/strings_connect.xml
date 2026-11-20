@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_section">"Kontrol perangkat lain"</string>
+    <string name="connect_this_device">"Perangkat ini"</string>
+    <string name="connect_pair_title">"Sambungkan dengan %1$s"</string>
+    <string name="connect_enter_code">"Masukkan kode yang ditampilkan di %1$s."</string>
+    <string name="connect_add_by_address">"Tambahkan lewat alamat"</string>
+    <string name="connect_address_help">"Untuk Tailscale atau jaringan lain, masukkan IP atau nama perangkat, mis. 100.101.102.103."</string>
+    <string name="connect_device_key">"Kunci perangkat %1$s"</string>
+    <string name="connect_device_key_help">"Pastikan perangkat lain menampilkan kunci yang sama, lalu masukkan kodenya."</string>
+    <string name="connect_already_paired">"Sudah tersambung. Alamat baru disimpan."</string>
+    <string name="connect_switch_title">"Saat berpindah perangkat"</string>
+    <string name="connect_switch_keep">"Tetap putar di keduanya"</string>
+    <string name="connect_switch_pause">"Jeda di sini"</string>
+    <string name="connect_switch_move">"Pindahkan pemutaran"</string>
+    <string name="connect_output">"Output"</string>
+    <string name="connect_preset">"Preset"</string>
+    <string name="connect_sources_note">"Lagu diputar dari sumber milik perangkat itu."</string>
+    <string name="connect_reachable_at">"Dapat dijangkau di"</string>
+    <string name="connect_none_found">"Tidak ada perangkat YORU lain. Aktifkan kontrol jarak jauh di sana, lalu cari lagi."</string>
+    <string name="connect_settings_title">"YORU Connect"</string>
+    <string name="connect_settings_summary">"Kontrol perangkat YORU lain atau biarkan mereka mengontrol perangkat ini"</string>
+    <string name="connect_continue">"Lanjut"</string>
+    <string name="connect_this_key">"Kunci perangkat ini: %1$s"</string>
+    <string name="connect_settings_link">"Kode penyandingan, alamat, dan perangkat"</string>
+    <string name="connect_devices">"Perangkat"</string>
+    <string name="connect_guide_title">"Cara menghubungkan"</string>
+    <string name="connect_guide_host">"Di perangkat yang akan memutar musik, aktifkan Izinkan Kontrol Jarak Jauh lalu ketuk Tampilkan kode penyandingan."</string>
+    <string name="connect_guide_pick">"Di perangkat yang Anda pakai untuk mengontrol, buka Putar di pada pemutar, pilih perangkat itu, lalu masukkan kodenya. Penyandingan cukup sekali."</string>
+    <string name="connect_guide_network">"Hubungkan keduanya ke Wi-Fi yang sama. Di jaringan lain, seperti Tailscale, gunakan Tambahkan lewat alamat."</string>
+    <string name="connect_guide_sources">"Musik diputar dari sumber milik perangkat itu sendiri, jadi masuklah ke layanan yang sama di sana. YouTube Music dan SoundCloud juga bisa sebagai tamu."</string>
+    <string name="connect_host_on">"Aktif. Perangkat yang disandingkan dapat menemukan dan mengontrol perangkat ini."</string>
+    <string name="connect_host_off">"Nonaktif. Aktifkan agar perangkat lain dapat memutar musik di sini."</string>
+    <string name="connect_idle_connecting">"Menghubungkan…"</string>
+    <string name="connect_idle_empty">"Tidak ada yang diputar di sana. Pilih lagu untuk memulai."</string>
+    <string name="connect_error_unavailable">"%1$s tidak dapat memutar lagu ini. Masuk ke layanan musik yang sama di sana."</string>
+    <string name="connect_error_disabled">"Kontrol jarak jauh nonaktif di %1$s. Aktifkan di sana."</string>
+    <string name="connect_error_unpaired">"%1$s tidak lagi menerima perangkat ini. Sandingkan lagi."</string>
+    <string name="connect_error_unreachable">"Tidak dapat menjangkau %1$s. Pastikan keduanya di jaringan yang sama dan YORU terbuka di sana."</string>
+    <string name="connect_error_lost">"Koneksi ke %1$s terputus."</string>
+</resources>

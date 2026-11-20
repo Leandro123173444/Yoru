@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chromium_downloading" formatted="false">"Téléchargement du navigateur de connexion. Cela n\'arrive qu\'une fois et prend environ 150 Mo."</string>
+    <string name="chromium_failed" formatted="false">"Le navigateur de connexion n\'a pas pu démarrer : %1$s"</string>
+    <string name="chromium_preparing" formatted="false">"Préparation du navigateur de connexion…"</string>
+    <string name="insights_location_history_guide_desktop" formatted="false">"Chaque écoute conserve l’endroit exact où elle a été jouée, pour la voir sur une carte. Les données restent sur cet ordinateur, ne sont jamais envoyées et sont exclues des sauvegardes. Vous pouvez les supprimer ici ou depuis la carte à tout moment."</string>
+    <string name="insights_places_guide_desktop" formatted="false">"Pendant la lecture, Aurora vérifie votre position au plus toutes les 10 minutes, la compare à Domicile et Travail et ne garde que l’étiquette. Domicile et Travail restent sur cet ordinateur et sont exclus de toutes les sauvegardes."</string>
+    <string name="insights_step_private_title_desktop" formatted="false">"Tout reste sur votre ordinateur"</string>
+    <string name="levels_desktop_exclusive_needed" formatted="false">"Lance la lecture sur une sortie exclusive pour calibrer."</string>
+    <string name="levels_desktop_hardware_help" formatted="false">"Saisis 0=dB : le volume matériel actuel du DAC par rapport à la sortie maximale."</string>
+    <string name="levels_desktop_hardware_points" formatted="false">"Atténuation du volume matériel"</string>
+    <string name="levels_desktop_volume" formatted="false">"Le volume propre d\'Aurora est mesuré directement. Calibre au volume matériel actuel du DAC."</string>
+    <string name="location_linux_off" formatted="false">"L\'accès à la position est désactivé pour Aurora. Active les services de localisation dans les paramètres de confidentialité de ton bureau, autorise Aurora, puis réessaie."</string>
+    <string name="location_open_windows_settings" formatted="false">"Ouvrir les paramètres de localisation"</string>
+    <string name="location_unsupported" formatted="false">"La localisation n\'est pas disponible sur ce système."</string>
+    <string name="location_windows_off" formatted="false">"Windows bloque la localisation pour les applis de bureau. Active l\'accès à la localisation, y compris pour les applis de bureau, puis réessaie."</string>
+    <string name="lyrics_settings_summary_desktop" formatted="false">"Style de synchronisation et provenance des paroles"</string>
+    <string name="lyrics_source_lrclib_detail" formatted="false">"Base de paroles gratuite et communautaire"</string>
+    <string name="lyrics_source_server" formatted="false">"Source du Morceau"</string>
+    <string name="lyrics_source_server_detail" formatted="false">"Paroles de ton serveur, du service de streaming ou du fichier"</string>
+    <string name="lyrics_source_spotify_detail" formatted="false">"Paroles synchronisées d\'un compte Spotify fusionné"</string>
+    <string name="lyrics_sources_hint" formatted="false">"Aurora les consulte dans cet ordre. Les premières paroles synchronisées trouvées sont utilisées, sinon les premières disponibles."</string>
+    <string name="lyrics_sources_title_desktop" formatted="false">"Sources des Paroles"</string>
+    <string name="merge_comments_desktop" formatted="false">"Commentaires SoundCloud"</string>
+    <string name="merge_comments_summary_desktop" formatted="false">"Affiche les commentaires horodatés quand un titre SoundCloud correspondant est trouvé"</string>
+    <string name="merge_lyrics_desktop" formatted="false">"Paroles Spotify"</string>
+    <string name="merge_lyrics_summary_desktop" formatted="false">"Utilise les paroles synchronisées de Spotify pour les morceaux de tes autres sources"</string>
+    <string name="merge_options_desktop" formatted="false">"Options de Fusion"</string>
+    <string name="merge_options_note" formatted="false">"Quand SoundCloud ou Spotify fait partie de ta bibliothèque unifiée, Aurora peut apporter leurs extras aux morceaux de tes autres sources. Désactive chacun entièrement ou pour les morceaux d\'une source précise."</string>
+    <string name="merge_options_summary_desktop" formatted="false">"Ce que les services fusionnés ajoutent à tes morceaux"</string>
+    <string name="merge_songs_from" formatted="false">"Morceaux De"</string>
+    <string name="playlist_save_to_desktop" formatted="false">"Enregistrer Dans"</string>
+    <string name="shortcut_seek_back" formatted="false">"Reculer"</string>
+    <string name="shortcut_seek_forward" formatted="false">"Avancer"</string>
+    <string name="shortcut_show_list" formatted="false">"Afficher Les Raccourcis"</string>
+    <string name="shortcut_volume_down" formatted="false">"Baisser Le Volume"</string>
+    <string name="shortcut_volume_up" formatted="false">"Augmenter Le Volume"</string>
+    <string name="shortcuts_title" formatted="false">"Raccourcis Clavier"</string>
+    <string name="storage_youtube_desktop_note" formatted="false">"Les téléchargements YouTube sont enregistrés dans Music/Aurora de ton dossier utilisateur, qui est ajouté à tes dossiers de musique."</string>
+    <string name="tag_edit_desktop_note" formatted="false">"Écrire les tags modifie le fichier sur cet ordinateur. Ferme-le d\'abord dans les autres applis."</string>
+    <string name="text_acrylic_f39ce1" formatted="false">"Acrylique"</string>
+    <string name="text_add_music_folder_a083d8" formatted="false">"Ajouter un dossier de musique"</string>
+    <string name="text_audio_decoding_copyright_the_ffmpeg_developers_lgpl_3_0_or_later_6338f2" formatted="false">"Décodage audio. Copyright © les développeurs de FFmpeg. LGPL-3.0-or-later, lié dynamiquement via JavaCPP Presets. Licence complète : https://www.gnu.org/licenses/lgpl-3.0.html"</string>
+    <string name="text_aurora_s_volume_sets_the_dac_s_own_volume_when_it_has_one_the_audi_371db5" formatted="false">"Le volume d\'Aurora règle le volume propre du DAC lorsqu\'il en a un. Le son reste bit-perfect."</string>
+    <string name="text_aurora_takes_sole_control_of_the_device_and_sends_samples_at_the_cfbce6" formatted="false">"Aurora prend le contrôle exclusif de l\'appareil et envoie les échantillons à la fréquence et à la profondeur de bits propres à la piste. Les autres applications sont muettes pendant qu\'Aurora joue. La sortie reste bit-perfect lorsque le traitement, le volume et ReplayGain laissent les échantillons inchangés ; si l\'appareil refuse un format, Aurora revient au mode partagé et Chemin du signal en indique la raison."</string>
+    <string name="text_background_tint_a39a12" formatted="false">"Teinte de l\'arrière-plan"</string>
+    <string name="text_bit_float_012895">"Flottant %1$d bits"</string>
+    <string name="text_bit_integer_72520f">"Entier %1$d bits"</string>
+    <string name="text_bit_perfect_output_that_bypasses_the_sound_server_d2dcd9" formatted="false">"Sortie bit-perfect qui contourne le serveur audio"</string>
+    <string name="text_bit_perfect_output_that_bypasses_the_windows_mixer_eff21d" formatted="false">"Sortie bit-perfect qui contourne le mélangeur Windows"</string>
+    <string name="text_built_with_compose_multiplatform_material_3_389c3a" formatted="false">"Conçu avec Compose Multiplatform et Material 3."</string>
+    <string name="text_cache_50338b" formatted="false">"Cache"</string>
+    <string name="text_cannot_resize_this_image_be7b26" formatted="false">"Impossible de redimensionner cette image."</string>
+    <string name="text_ch_282ab4">"%1$d canaux"</string>
+    <string name="text_choose_a_supported_image_under_100_megapixels_af6c16" formatted="false">"Choisissez une image prise en charge de moins de 100 mégapixels."</string>
+    <string name="text_choose_an_image_smaller_than_20_mb_cc7669" formatted="false">"Choisissez une image de moins de 20 Mo."</string>
+    <string name="text_choose_an_output_device_to_use_exclusive_mode_b2a25d" formatted="false">"Choisissez un appareil de sortie pour utiliser le mode exclusif"</string>
+    <string name="text_choose_where_your_music_lives_on_this_pc_876bd8" formatted="false">"Choisissez où se trouve votre musique sur ce PC"</string>
+    <string name="text_clear_image_cache_ff7b31" formatted="false">"Vider le cache des images"</string>
+    <string name="text_close_to_tray_f91cc6" formatted="false">"Fermer dans la zone de notification"</string>
+    <string name="text_date_added_56ab7a" formatted="false">"Date d\'ajout"</string>
+    <string name="text_device_capabilities_4cac01" formatted="false">"Capacités de l\'appareil"</string>
+    <string name="text_device_exclusive_mode_and_buffer_f2337c" formatted="false">"Appareil, mode exclusif et tampon"</string>
+    <string name="text_exclusive_formats_3dafa8" formatted="false">"Formats du mode exclusif"</string>
+    <string name="text_exclusive_mode_01d9b2" formatted="false">"Mode exclusif"</string>
+    <string name="text_exclusive_mode_is_unavailable_0de552">"Le mode exclusif est indisponible : %1$s"</string>
+    <string name="text_exclusive_mode_is_unavailable_on_this_device_e51016" formatted="false">"Le mode exclusif est indisponible sur cet appareil"</string>
+    <string name="text_follow_the_playing_cover_5d2e91" formatted="false">"Suivre la pochette en cours"</string>
+    <string name="text_glass_edges_f462cd" formatted="false">"Bords en verre"</string>
+    <string name="text_hz_is_unavailable_using_hz_14de1c">"%1$d Hz est indisponible ; utilisation de %2$d Hz."</string>
+    <string name="text_in_use_by_the_sound_server_or_another_app_aa3eaa" formatted="false">"Utilisé par le serveur audio ou une autre application"</string>
+    <string name="text_keep_aurora_playing_in_the_notification_area_when_the_window_clos_e5fed5" formatted="false">"Laisse Aurora jouer dans la zone de notification lorsque la fenêtre se ferme"</string>
+    <string name="text_larger_buffers_ride_out_heavy_system_load_smaller_ones_react_fast_e4d5f8" formatted="false">"Les tampons plus grands résistent aux fortes charges système ; les plus petits réagissent plus vite aux déplacements et au volume. S\'applique à la réouverture de la sortie."</string>
+    <string name="text_let_your_desktop_show_through_the_window_blurred_windows_11_only_08f192" formatted="false">"Laisse transparaître le bureau à travers la fenêtre, avec un flou. Windows 11 uniquement."</string>
+    <string name="text_linux_java_b7923f">"Linux · Java %1$d"</string>
+    <string name="text_macos_java_4c1e2a">"macOS · Java %1$d"</string>
+    <string name="text_logs_126dd3" formatted="false">"Journaux"</string>
+    <string name="text_mica_3ccf84" formatted="false">"Mica"</string>
+    <string name="text_open_in_full_page_0ec923" formatted="false">"Ouvrir en pleine page"</string>
+    <string name="text_output_buffer_61b372" formatted="false">"Tampon de sortie"</string>
+    <string name="text_panel_frost_ada0d3" formatted="false">"Givrage des panneaux"</string>
+    <string name="text_playing_music_af9695" formatted="false">"Lecture de musique en cours"</string>
+    <string name="text_shared_mode_mix_format_4a5bc8" formatted="false">"Format de mixage du mode partagé"</string>
+    <string name="text_shared_mode_mixes_aurora_with_other_apps_through_the_system_sound_0c8e9d" formatted="false">"Le mode partagé mélange Aurora avec les autres applications via le serveur audio du système, à 48 kHz. Activez le mode exclusif pour une lecture bit-perfect."</string>
+    <string name="text_shared_mode_mixes_aurora_with_other_apps_through_the_system_sound_ad2dd3" formatted="false">"Le mode partagé mélange Aurora avec les autres applications via le serveur audio du système, à 48 kHz."</string>
+    <string name="text_shared_mode_mixes_aurora_with_other_apps_through_the_windows_audi_a3c865" formatted="false">"Le mode partagé mélange Aurora avec les autres applications via le moteur audio de Windows, au format de mixage de l\'appareil. Activez le mode exclusif pour une lecture bit-perfect."</string>
+    <string name="text_system_default_follows_the_default_output_device_even_when_it_cha_2bff98" formatted="false">"La valeur par défaut du système suit l\'appareil de sortie par défaut, même s\'il change pendant la lecture."</string>
+    <string name="text_system_default_follows_the_windows_output_device_even_when_it_cha_5703e0" formatted="false">"La valeur par défaut du système suit l\'appareil de sortie de Windows, même s\'il change pendant la lecture."</string>
+    <string name="text_the_audio_output_could_not_be_used_2b7767" formatted="false">"La sortie audio n\'a pas pu être utilisée"</string>
+    <string name="text_the_device_is_in_use_by_the_sound_server_or_another_app_ask_pipew_e1e816" formatted="false">"L\'appareil est utilisé par le serveur audio ou une autre application. Demandez à PipeWire ou PulseAudio de le libérer, puis désactivez et réactivez le mode exclusif."</string>
+    <string name="text_the_sample_rate_policy_and_dither_apply_in_exclusive_mode_shared_219b9f" formatted="false">"La politique de fréquence d\'échantillonnage et le dither s\'appliquent en mode exclusif. Le mode partagé lit toujours à 48 kHz via le serveur audio."</string>
+    <string name="text_the_sample_rate_policy_and_dither_apply_in_exclusive_mode_shared_caca2d" formatted="false">"La politique de fréquence d\'échantillonnage et le dither s\'appliquent en mode exclusif. Le mode partagé lit toujours au format de mixage de Windows."</string>
+    <string name="text_the_selected_output_device_was_disconnected_00e44e" formatted="false">"L\'appareil de sortie sélectionné a été déconnecté"</string>
+    <string name="text_the_track_could_not_be_decoded_3a23e8" formatted="false">"La piste n\'a pas pu être décodée"</string>
+    <string name="text_the_track_could_not_be_opened_5719af" formatted="false">"La piste n\'a pas pu être ouverte"</string>
+    <string name="text_the_track_s_sample_rate_is_not_supported_5c8629" formatted="false">"La fréquence d\'échantillonnage de la piste n\'est pas prise en charge"</string>
+    <string name="text_tint_the_whole_app_with_the_playing_song_s_cover_a83c17" formatted="false">"Teinte toute l\'application avec la couleur du titre en cours de lecture"</string>
+    <string name="text_translucent_window_d865c7" formatted="false">"Fenêtre translucide"</string>
+    <string name="text_using_your_system_accent_colour_89502e" formatted="false">"Utilise votre couleur d\'accentuation système."</string>
+    <string name="text_using_your_windows_accent_colour_7d4b4a" formatted="false">"Utilise votre couleur d\'accentuation Windows."</string>
+    <string name="text_volume_3b18e8" formatted="false">"Volume"</string>
+    <string name="text_windows_capabilities_0f1fa0" formatted="false">"Fonctionnalités Windows"</string>
+    <string name="text_windows_java_2566af">"Windows · Java %1$d"</string>
+    <string name="update_desktop_install_failed" formatted="false">"Impossible de lancer le programme d\'installation. Tu peux aussi télécharger la mise à jour sur GitHub."</string>
+    <string name="update_desktop_install_note" formatted="false">"Aurora se ferme pendant l\'installation. Rouvre-le une fois l\'installation terminée."</string>
+    <string name="youtube_download_open_folder" formatted="false">"Ouvrir le dossier de téléchargement"</string>
+    <string name="player_fullscreen" formatted="false">"Plein écran"</string>
+    <string name="player_exit_fullscreen" formatted="false">"Quitter le plein écran"</string>
+    <string name="window_minimize" formatted="false">"Réduire"</string>
+    <string name="window_maximize" formatted="false">"Agrandir"</string>
+    <string name="window_restore" formatted="false">"Restaurer"</string>
+    <string name="window_system_title_bar" formatted="false">"Barre de titre du système"</string>
+    <string name="window_system_title_bar_summary" formatted="false">"Utilise le cadre de fenêtre de votre bureau au lieu de celui d'Aurora. S'applique après le redémarrage d'Aurora."</string>
+    <string name="discord_not_running_desktop" formatted="false">"Discord n'est pas lancé"</string>
+    <string name="discord_without_app_desktop" formatted="false">"Sans l'application Discord"</string>
+    <string name="discord_without_app_summary_desktop" formatted="false">"Nécessaire uniquement si l'application Discord n'est pas lancée sur cet ordinateur"</string>
+</resources>

@@ -1,0 +1,387 @@
+package com.aurora.music.data
+
+import com.aurora.music.data.remote.BaseItemDto
+import com.aurora.music.data.remote.CreatePlaylistRequest
+import com.aurora.music.data.remote.JellyfinClient
+import com.aurora.music.data.remote.JellyfinPlaybackProgress
+import com.aurora.music.data.remote.JellyfinPlaybackStopped
+import com.aurora.music.model.Album
+import com.aurora.music.model.Artist
+import com.aurora.music.model.DetailInfo
+import com.aurora.music.model.Playlist
+import com.aurora.music.model.Song
+import com.aurora.music.model.inferReleaseType
+import com.aurora.music.model.releaseTypeLabel
+import com.aurora.music.util.AppLog
+import com.aurora.music.util.accentArgbFor
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import retrofit2.HttpException
+
+class JellyfinBackend(
+    private val client: JellyfinClient,
+    private val maxBitrateProvider: () -> Int,
+    private val localize: (Song) -> Song,
+) : MediaBackend {
+
+    override val session: Session get() = client.session
+    private val uid: String get() = client.userId
+
+    private companion object {
+        const val TICKS_PER_SEC = 10_000_000L
+        private const val TICKS_PER_MS = 10_000L
+    }
+
+    private fun BaseItemDto.imageId(): String? = when {
+        ImageTags?.containsKey("Primary") == true -> Id
+        !AlbumPrimaryImageTag.isNullOrBlank() && !AlbumId.isNullOrBlank() -> AlbumId
+        else -> null
+    }
+
+    private fun BaseItemDto.toSong(): Song {
+        val bitrate = maxBitrateProvider()
+        val source = MediaSources?.firstOrNull()
+        val audioStream = source?.MediaStreams?.firstOrNull { it.Type == "Audio" }
+        val base = Song(
+            id = Id,
+            title = Name ?: "Unknown",
+            artist = Artists?.firstOrNull() ?: AlbumArtist ?: "Unknown artist",
+            album = Album ?: "",
+            artworkUrl = client.coverArtUrl(imageId()),
+            durationSec = ((RunTimeTicks ?: 0L) / TICKS_PER_SEC).toInt(),
+            liked = UserData?.IsFavorite == true,
+            explicit = false,
+            accentArgb = accentArgbFor(Id),
+            streamUrl = client.streamUrl(Id, bitrate, bitrate == 0 || (source?.Bitrate ?: 0) / 1000 in 1..bitrate),
+            albumId = AlbumId ?: "",
+            artistId = ArtistItems?.firstOrNull()?.Id ?: AlbumArtists?.firstOrNull()?.Id ?: "",
+            suffix = source?.Container ?: "",
+            bitrateKbps = (source?.Bitrate ?: 0) / 1000,
+            sampleRateHz = audioStream?.SampleRate ?: 0,
+            bitDepth = audioStream?.BitDepth ?: 0,
+            path = Path ?: "",
+            genre = Genres?.firstOrNull().orEmpty(),
+            playCount = UserData?.PlayCount ?: 0,
+            dateAddedSec = com.aurora.music.util.parseIsoEpochSec(DateCreated),
+        )
+        return localize(base)
+    }
+
+    private fun BaseItemDto.toAlbum(): Album = Album(
+        id = Id,
+        title = Name ?: "Album",
+        artist = AlbumArtist ?: Artists?.firstOrNull() ?: "Unknown artist",
+        artworkUrl = client.coverArtUrl(imageId()),
+        year = ProductionYear ?: 0,
+        songCount = ChildCount ?: 0,
+        durationSec = ((RunTimeTicks ?: 0L) / TICKS_PER_SEC).toInt(),
+        playCount = UserData?.PlayCount ?: 0,
+    )
+
+    private fun BaseItemDto.toArtist(): Artist = Artist(
+        id = Id,
+        name = Name ?: "Artist",
+        imageUrl = client.coverArtUrl(imageId()),
+        monthlyListeners = 0L,
+    )
+
+    private fun BaseItemDto.toPlaylist(): Playlist = Playlist(
+        id = Id,
+        title = Name ?: "Playlist",
+        subtitle = "${ChildCount ?: 0} songs",
+        coverUrl = client.coverArtUrl(imageId()),
+        songCount = ChildCount ?: 0,
+        accentArgb = accentArgbFor(Id),
+    )
+
+    private suspend fun items(params: Map<String, String>): List<BaseItemDto> =
+        runCatching { client.api.items(uid, params + ("EnableTotalRecordCount" to "false")).Items }.getOrDefault(emptyList())
+
+    private fun albumParams(sortBy: String, order: String, limit: Int, extra: Map<String, String> = emptyMap()) =
+        mapOf("IncludeItemTypes" to "MusicAlbum", "Recursive" to "true", "SortBy" to sortBy, "SortOrder" to order, "Limit" to "$limit") + extra
+
+    override suspend fun ping(): Boolean =
+        runCatching { client.api.publicInfo().isSuccessful }.getOrDefault(false)
+
+    override suspend fun home(): HomeData = coroutineScope {
+        val newReleases = shelf { items(albumParams("DateCreated", "Descending", 12)).map { it.toAlbum() } }
+        val recent = shelf { items(albumParams("DatePlayed", "Descending", 12, mapOf("Filters" to "IsPlayed"))).map { it.toAlbum() } }
+        val frequent = shelf { items(albumParams("PlayCount", "Descending", 12, mapOf("Filters" to "IsPlayed"))).map { it.toAlbum() } }
+        val random = shelf { items(albumParams("Random", "Ascending", 12)).map { it.toAlbum() } }
+        val playlists = shelf { items(mapOf("IncludeItemTypes" to "Playlist", "Recursive" to "true", "SortBy" to "SortName")).map { it.toPlaylist() } }
+        val artists = shelf { client.api.artists(mapOf("UserId" to uid, "Recursive" to "true", "SortBy" to "SortName", "Limit" to "20")).Items.map { it.toArtist() } }
+        val starred = shelf { items(mapOf("IncludeItemTypes" to "Audio", "Recursive" to "true", "Filters" to "IsFavorite", "Limit" to "50", "Fields" to "MediaSources")).map { it.toSong() } }
+        HomeData(newReleases.await(), recent.await(), frequent.await(), random.await(), playlists.await(), artists.await(), starred.await())
+    }
+
+    override suspend fun allAlbums(): List<Album> = pagedAlbums { offset, size ->
+        items(mapOf("IncludeItemTypes" to "MusicAlbum", "Recursive" to "true", "SortBy" to "SortName", "StartIndex" to "$offset", "Limit" to "$size")).map { it.toAlbum() }
+    }
+
+    override suspend fun allArtists(): List<Artist> = runCatching {
+        client.api.artists(mapOf("UserId" to uid, "Recursive" to "true", "SortBy" to "SortName")).Items
+    }.getOrDefault(emptyList()).map { it.toArtist() }
+
+    override suspend fun allPlaylists(): List<Playlist> =
+        items(mapOf("IncludeItemTypes" to "Playlist", "Recursive" to "true", "SortBy" to "SortName")).map { it.toPlaylist() }
+
+    override suspend fun allSongs(): List<Song> =
+        items(mapOf("IncludeItemTypes" to "Audio", "Recursive" to "true", "SortBy" to "Random", "Limit" to "200", "Fields" to "MediaSources,Genres,DateCreated")).map { it.toSong() }
+
+    override suspend fun librarySongs(limit: Int): List<Song> =
+        items(mapOf("IncludeItemTypes" to "Audio", "Recursive" to "true", "SortBy" to "SortName", "Limit" to "$limit", "Fields" to "MediaSources,Path,Genres,DateCreated")).map { it.toSong() }
+
+    override suspend fun songsPage(offset: Int, count: Int): List<Song> =
+        items(mapOf("IncludeItemTypes" to "Audio", "Recursive" to "true", "SortBy" to "SortName", "StartIndex" to "$offset", "Limit" to "$count", "Fields" to "MediaSources,Path,Genres,DateCreated")).map { it.toSong() }
+
+    override suspend fun starredSongs(): List<Song> =
+        items(mapOf("IncludeItemTypes" to "Audio", "Recursive" to "true", "Filters" to "IsFavorite", "Fields" to "MediaSources,Genres,DateCreated")).map { it.toSong() }
+
+    // straight to the api: items() turns the total off
+    override suspend fun starredCount(): Int = runCatching {
+        client.api.items(uid, mapOf("IncludeItemTypes" to "Audio", "Recursive" to "true", "Filters" to "IsFavorite", "Limit" to "0")).TotalRecordCount
+    }.getOrDefault(0)
+
+    override suspend fun starredIds(): Set<String> =
+        items(mapOf("IncludeItemTypes" to "Audio,MusicAlbum,MusicArtist", "Recursive" to "true", "Filters" to "IsFavorite")).map { it.Id }.toSet()
+
+    override suspend fun songFor(id: String): Song? =
+        runCatching { client.api.item(uid, id).toSong() }.getOrNull()
+
+    override suspend fun search(query: String): SearchResults {
+        val all = items(mapOf("SearchTerm" to query, "Recursive" to "true", "IncludeItemTypes" to "Audio,MusicAlbum,MusicArtist", "Limit" to "60"))
+        return SearchResults(
+            songs = all.filter { it.Type == "Audio" }.map { it.toSong() },
+            albums = all.filter { it.Type == "MusicAlbum" }.map { it.toAlbum() },
+            artists = all.filter { it.Type == "MusicArtist" }.map { it.toArtist() },
+        )
+    }
+
+    override suspend fun scrobble(id: String) {
+        runCatching { client.api.markPlayed(uid, id) }
+    }
+
+    override suspend fun reportPlayback(report: PlaybackReport) {
+        if (report.event == PlaybackReportEvent.SCROBBLE) return
+        val stream = report.song.streamUrl.toHttpUrlOrNull()
+        val positionTicks = report.positionMs.coerceIn(0L, Long.MAX_VALUE / 10_000L) * 10_000L
+        val mediaSourceId = stream?.queryParameter("MediaSourceId")
+        val sessionId = stream?.queryParameter("PlaySessionId")?.takeIf { it.isNotBlank() } ?: report.sessionId
+        val response = if (report.event == PlaybackReportEvent.STOP) {
+            client.api.playbackStopped(JellyfinPlaybackStopped(report.song.id, sessionId, positionTicks, mediaSourceId))
+        } else {
+            val body = JellyfinPlaybackProgress(
+                ItemId = report.song.id,
+                PlaySessionId = sessionId,
+                PositionTicks = positionTicks,
+                IsPaused = report.state != PlaybackReportState.PLAYING,
+                CanSeek = report.durationMs > 0,
+                PlayMethod = if (stream?.encodedPath?.endsWith("/universal") == true) "Transcode" else "DirectPlay",
+                MediaSourceId = mediaSourceId,
+            )
+            if (report.event == PlaybackReportEvent.START) client.api.playbackStarted(body)
+            else client.api.playbackProgress(body)
+        }
+        if (!response.isSuccessful) throw HttpException(response)
+    }
+
+    override suspend fun matchingSongs(song: Song): List<Song> = items(mapOf("SearchTerm" to recordingTitle(song.title),
+        "Recursive" to "true", "IncludeItemTypes" to "Audio", "Limit" to "200")).map { it.toSong() }
+
+    override suspend fun radio(seedId: String): List<Song> {
+        val similar = runCatching {
+            client.api.similar(seedId, mapOf("userId" to uid, "limit" to "30")).Items
+        }.getOrDefault(emptyList()).filter { it.Type == "Audio" }.map { it.toSong() }
+        return similar.ifEmpty { allSongs().shuffled().take(30) }
+    }
+
+    override suspend fun createPlaylist(name: String): Boolean =
+        runCatching { client.api.createPlaylist(CreatePlaylistRequest(name, uid)).Id != null }.getOrDefault(false)
+
+    override suspend fun createPlaylistWithId(name: String): String? =
+        runCatching { client.api.createPlaylist(CreatePlaylistRequest(name, uid)).Id }.getOrNull()
+
+    override suspend fun addToPlaylist(playlistId: String, trackIds: List<String>): Boolean =
+        runCatching { client.api.addToPlaylist(playlistId, trackIds.joinToString(","), uid).isSuccessful }.getOrDefault(false)
+
+    override suspend fun removeFromPlaylist(playlistId: String, trackIds: List<String>): Boolean {
+        val entries = mutableListOf<String>()
+        var offset = 0
+        do {
+            val page = client.api.playlistItems(playlistId, mapOf("userId" to uid, "startIndex" to "$offset", "limit" to "200"))
+            val matching = page.Items.filter { it.Id in trackIds }
+            if (matching.any { it.PlaylistItemId.isNullOrBlank() }) return false
+            entries += matching.mapNotNull { it.PlaylistItemId }
+            offset += page.Items.size
+            if (offset >= page.TotalRecordCount) break
+            check(page.Items.isNotEmpty()) { "Incomplete playlist" }
+        } while (true)
+        return entries.isEmpty() || client.api.removePlaylistItems(playlistId, entries.joinToString(",")).isSuccessful
+    }
+
+    // the playlist item itself carries name and overview, and jellyfin wants the whole item back
+    override suspend fun updatePlaylist(id: String, name: String?, comment: String?): Boolean = runCatching {
+        if (name == null && comment == null) return true
+        val item = client.api.itemRaw(uid, id)
+        name?.trim()?.takeIf { it.isNotBlank() }?.let { item.addProperty("Name", it) }
+        comment?.let { item.addProperty("Overview", it) }
+        client.api.updateItem(id, item).isSuccessful
+    }.getOrDefault(false)
+
+    override suspend fun deletePlaylist(id: String): Boolean =
+        runCatching { client.api.deleteItem(id).isSuccessful }.getOrDefault(false)
+
+    override suspend fun setStarred(id: String, starred: Boolean, kind: String): Boolean = runCatching {
+        val resp = if (starred) client.api.favorite(uid, id) else client.api.unfavorite(uid, id)
+        resp.isSuccessful
+    }.getOrDefault(false)
+
+    override suspend fun detail(kind: String, id: String): DetailData? = runCatching {
+        when (kind) {
+            "album" -> {
+                val a = client.api.item(uid, id)
+                val tracks = items(mapOf("ParentId" to id, "IncludeItemTypes" to "Audio", "SortBy" to "ParentIndexNumber,IndexNumber,SortName", "Fields" to "MediaSources,Genres,DateCreated")).map { it.toSong() }
+                val typeLabel = releaseTypeLabel(inferReleaseType(tracks.size, tracks.sumOf { it.durationSec }))
+                DetailData(
+                    DetailInfo(a.Name ?: "Album", "${a.AlbumArtist ?: a.Artists?.firstOrNull() ?: ""} • ${a.ProductionYear ?: ""}", client.coverArtUrl(a.imageId()), accentArgbFor(a.Id), false, tracks.size, typeLabel),
+                    tracks,
+                )
+            }
+            "artist" -> coroutineScope {
+                val artist = async { client.api.item(uid, id) }
+                val albumList = async { items(mapOf("IncludeItemTypes" to "MusicAlbum", "ArtistIds" to id, "Recursive" to "true", "SortBy" to "ProductionYear,SortName", "SortOrder" to "Descending")).map { it.toAlbum() } }
+                val trackList = async { items(mapOf("IncludeItemTypes" to "Audio", "ArtistIds" to id, "Recursive" to "true", "Limit" to "60", "Fields" to "MediaSources,DateCreated")).map { it.toSong() } }
+                val ar = artist.await()
+                val albums = albumList.await()
+                val tracks = trackList.await()
+                DetailData(
+                    DetailInfo(ar.Name ?: "Artist", "${albums.size} albums · ${tracks.size} tracks", client.coverArtUrl(ar.imageId()), accentArgbFor(ar.Id), true, tracks.size, "Artist"),
+                    tracks,
+                    albums,
+                )
+            }
+            "playlist" -> {
+                val p = client.api.item(uid, id)
+                val tracks = runCatching {
+                    client.api.playlistItems(id, mapOf("userId" to uid, "Fields" to "MediaSources,Genres,DateCreated")).Items
+                }.getOrDefault(emptyList()).map { it.toSong() }
+                DetailData(
+                    DetailInfo(p.Name ?: "Playlist", "${tracks.size} songs", client.coverArtUrl(p.imageId()), accentArgbFor(p.Id), false, tracks.size, "Playlist",
+                        editableDescription = p.Overview.orEmpty(), description = p.Overview.orEmpty()),
+                    tracks,
+                )
+            }
+            "liked" -> {
+                val songs = starredSongs()
+                DetailData(
+                    DetailInfo("Liked Songs", "${songs.size} songs you love", songs.firstOrNull()?.artworkUrl ?: "", accentArgbFor("liked"), false, songs.size, "Liked"),
+                    songs,
+                )
+            }
+            else -> null
+        }
+    }.onFailure { AppLog.e("AuroraDetail", "jellyfin detail($kind,$id) failed", it) }.getOrNull()
+
+    override suspend fun collectionTracks(kind: String, id: String): List<Song> {
+        if (kind !in listOf("artist", "album", "playlist")) return super.collectionTracks(kind, id)
+        val result = mutableListOf<Song>()
+        while (true) {
+            val params = mutableMapOf("Fields" to "MediaSources,Genres,DateCreated,ArtistItems", "StartIndex" to "${result.size}", "Limit" to "200")
+            val page = if (kind == "playlist") client.api.playlistItems(id, params + ("userId" to uid)) else {
+                params["IncludeItemTypes"] = "Audio"
+                params["SortBy"] = "Album,ParentIndexNumber,IndexNumber,SortName"
+                if (kind == "artist") { params["ArtistIds"] = id; params["Recursive"] = "true" }
+                else params["ParentId"] = id
+                client.api.items(uid, params)
+            }
+            if (page.Items.isEmpty()) {
+                check(result.size >= page.TotalRecordCount) { "The server returned an incomplete tracklist." }
+                break
+            }
+            result.addAll(page.Items.map { it.toSong() })
+            if (result.size >= page.TotalRecordCount) break
+        }
+        return result
+    }
+
+    override val supportsFolders: Boolean get() = true
+
+    override suspend fun browseFolder(folderId: String): FolderContent? = runCatching {
+        if (folderId.isBlank()) {
+            // no parentid means root children are the user's library views
+            val views = items(mapOf("SortBy" to "SortName"))
+            val music = views.filter { it.CollectionType == "music" }
+            val roots = music.ifEmpty { views.filter { it.IsFolder == true } }
+            FolderContent("", "Folders", roots.map { FolderNode(it.Id, it.Name ?: "Folder") })
+        } else {
+            val children = items(mapOf("ParentId" to folderId, "SortBy" to "IsFolder,SortName", "Fields" to "MediaSources,Path"))
+            val name = runCatching { client.api.item(uid, folderId).Name }.getOrNull() ?: "Folder"
+            FolderContent(
+                id = folderId,
+                title = name,
+                folders = children.filter { it.IsFolder == true && it.Type != "Audio" }.map { FolderNode(it.Id, it.Name ?: "Folder") },
+                songs = children.filter { it.Type == "Audio" }.map { it.toSong() },
+            )
+        }
+    }.onFailure { AppLog.e("AuroraFolders", "jellyfin browseFolder($folderId) failed", it) }.getOrNull()
+
+    override val supportsServerTagEdit: Boolean get() = true
+
+    override suspend fun readMetadata(songId: String): AudioTags? = runCatching {
+        val o = client.api.itemRaw(uid, songId)
+        fun str(key: String) = o.get(key)?.takeIf { !it.isJsonNull }?.asString.orEmpty()
+        fun arr(key: String) = o.getAsJsonArray(key)?.mapNotNull { e -> e.takeIf { !it.isJsonNull }?.asString } ?: emptyList()
+        fun int(key: String) = o.get(key)?.takeIf { !it.isJsonNull }?.asInt?.takeIf { it > 0 }?.toString() ?: ""
+        AudioTags(
+            title = str("Name"),
+            artist = arr("Artists").joinToString("; "),
+            album = str("Album"),
+            albumArtist = str("AlbumArtist"),
+            genre = arr("Genres").joinToString("; "),
+            year = int("ProductionYear"),
+            trackNumber = int("IndexNumber"),
+        )
+    }.getOrNull()
+
+    override suspend fun updateMetadata(songId: String, tags: AudioTags): Boolean = runCatching {
+        // post the full item back unabridged so provider ids and image tags aren't clobbered
+        val obj = client.api.itemRaw(uid, songId)
+        fun strArray(values: List<String>) = com.google.gson.JsonArray().apply { values.forEach { add(it) } }
+        fun split(s: String) = s.split(';', ',').map { it.trim() }.filter { it.isNotBlank() }
+
+        obj.addProperty("Name", tags.title)
+        obj.addProperty("Album", tags.album)
+        obj.addProperty("AlbumArtist", tags.albumArtist)
+        obj.add("Artists", strArray(split(tags.artist)))
+        obj.add("Genres", strArray(split(tags.genre)))
+        tags.year.toIntOrNull()?.let { obj.addProperty("ProductionYear", it) }
+        tags.trackNumber.toIntOrNull()?.let { obj.addProperty("IndexNumber", it) }
+
+        client.api.updateItem(songId, obj).isSuccessful
+    }.onFailure { AppLog.e("AuroraTagEdit", "jellyfin updateMetadata($songId) failed", it) }.getOrDefault(false)
+
+    override suspend fun serverLyrics(song: Song): Lyrics? {
+        val lines = runCatching { client.api.lyrics(song.id).Lyrics }.getOrNull()?.filter { !it.Text.isNullOrEmpty() }.orEmpty()
+        if (lines.isEmpty()) return null
+        val synced = lines.any { (it.Start ?: 0L) > 0L }
+        val mapped = lines.map { line ->
+            val start = line.Start ?: 0L
+            val text = line.Text ?: ""
+            val cues = line.Cues.orEmpty().filter { it.Position != null && it.Start != null }.sortedBy { it.Position }
+            val words = cues.mapIndexedNotNull { i, cue ->
+                val from = if (i == 0) 0 else cue.Position!!.coerceIn(0, text.length)
+                val to = cues.getOrNull(i + 1)?.Position?.coerceIn(from, text.length) ?: text.length
+                if (from >= to) null
+                else LyricWord(cue.Start!! / TICKS_PER_MS, cue.End?.let { it / TICKS_PER_MS } ?: -1, text.substring(from, to))
+            }
+            LyricLine((start / TICKS_PER_SEC).toInt(), text, start / TICKS_PER_MS, words)
+        }
+        return Lyrics(mapped, synced, "Jellyfin")
+    }
+
+    override fun streamUrl(songId: String, maxBitrate: Int, lossless: Boolean): String =
+        client.streamUrl(songId, maxBitrate, lossless)
+
+    override fun coverArtUrl(id: String, size: Int): String = client.coverArtUrl(id, size)
+}

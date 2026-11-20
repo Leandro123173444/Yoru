@@ -1,0 +1,447 @@
+package com.aurora.music.ui.screens.player
+
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.animation.animateColorAsState
+import com.aurora.music.ui.theme.paperClip
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.DragInteraction
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil3.compose.LocalPlatformContext
+import com.aurora.music.R
+import com.aurora.music.data.Lyrics
+import com.aurora.music.data.charFill
+import com.aurora.music.data.withWordTiming
+import com.aurora.music.desktop.player.PlayerUiState
+import com.aurora.music.desktop.ui.LocalDesktopContainer
+import com.aurora.music.localization.appString
+import com.aurora.music.model.Song
+import com.aurora.music.ui.components.Artwork
+import com.aurora.music.ui.components.formatTime
+import com.aurora.music.util.artworkPalette
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.math.abs
+import com.aurora.music.model.accent
+
+@Composable
+internal fun LyricsScreen(
+    state: PlayerUiState,
+    onClose: () -> Unit,
+    onTogglePlay: () -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onSeek: (Float) -> Unit,
+    loadLyrics: suspend (Song) -> Lyrics? = LocalDesktopContainer.current.lyricsRepository::lyricsFor,
+    loadMeanings: suspend (Song) -> com.aurora.music.data.GeniusSong? = defaultMeaningsLoader(),
+) {
+    val song = state.current
+    var lyrics by remember(song.id, song.playbackSource?.providerId) { mutableStateOf<Lyrics?>(null) }
+    var loading by remember(song.id, song.playbackSource?.providerId) { mutableStateOf(true) }
+    LaunchedEffect(song.id, song.playbackSource?.providerId) {
+        lyrics = if (song.id.isBlank()) null else loadLyrics(song)
+        loading = false
+    }
+    val meanings = rememberMeanings(song, lyrics, loadMeanings)
+    var explain by remember(song.id) { mutableStateOf<List<com.aurora.music.data.GeniusReferent>?>(null) }
+    var about by remember(song.id) { mutableStateOf(false) }
+    WideLyrics(state, lyrics, loading, onClose, onTogglePlay, onPrevious, onNext, onSeek, meanings, { explain = it }, { about = true })
+    GeniusSheets(meanings, explain, about) { explain = null; about = false }
+}
+
+@Composable
+private fun WideLyrics(
+    state: PlayerUiState,
+    lyrics: Lyrics?,
+    loading: Boolean,
+    onClose: () -> Unit,
+    onTogglePlay: () -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onSeek: (Float) -> Unit,
+    meanings: com.aurora.music.data.LyricMeanings?,
+    onExplain: (List<com.aurora.music.data.GeniusReferent>) -> Unit,
+    onAbout: () -> Unit,
+) {
+    val song = state.current
+    val ui = com.aurora.music.ui.theme.LocalUiPrefs.current
+    Box(Modifier.fillMaxSize().background(Color(0xFF17191D)).clickable(
+        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null,
+    ) {}) {
+        LyricsBackdrop(song, state.isPlaying)
+        Row(Modifier.fillMaxSize().padding(horizontal = 56.dp, vertical = 32.dp)) {
+            BoxWithConstraints(Modifier.weight(0.42f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                val art = minOf(maxWidth, maxHeight * .5f, 420.dp)
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.widthIn(max = 460.dp)) {
+                    Artwork(song.artworkUrl, song.accent, Modifier.size(art), corner = 16.dp)
+                    Spacer(Modifier.height(24.dp))
+                    Text(song.title, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(song.artist, color = Color.White.copy(alpha = .65f), style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Spacer(Modifier.height(20.dp))
+                    if (state.durationSec > 0) {
+                        com.aurora.music.ui.components.Waveform(
+                            progress = state.progress, accent = Color.White, onSeek = onSeek,
+                            modifier = Modifier.fillMaxWidth(), seed = song.id.hashCode(),
+                            barCount = ui.playerWaveBars.coerceIn(24, 96), height = 40.dp,
+                        )
+                        Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(formatTime(state.positionSec.toInt()), color = Color.White.copy(alpha = .65f), style = MaterialTheme.typography.labelSmall)
+                            Text(formatTime(state.durationSec), color = Color.White.copy(alpha = .65f), style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onPrevious, Modifier.size(52.dp)) {
+                            Icon(Icons.Default.SkipPrevious, appString(R.string.text_previous_50f942), Modifier.size(28.dp), tint = Color.White)
+                        }
+                        Spacer(Modifier.width(20.dp))
+                        IconButton(onTogglePlay, Modifier.size(60.dp).background(Color.White.copy(alpha = .16f), CircleShape)) {
+                            val playPause = appString(R.string.text_play_pause_14a1d0)
+                            com.aurora.music.ui.components.PlayPauseIcon(state.isPlaying, Color.White, Modifier.size(32.dp).semantics { contentDescription = playPause })
+                        }
+                        Spacer(Modifier.width(20.dp))
+                        IconButton(onNext, Modifier.size(52.dp)) {
+                            Icon(Icons.Default.SkipNext, appString(R.string.text_next_bc9819), Modifier.size(28.dp), tint = Color.White)
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.width(48.dp))
+            Box(Modifier.weight(0.58f).fillMaxHeight()) {
+                when {
+                    loading -> CircularProgressIndicator(Modifier.align(Alignment.Center).size(28.dp),
+                        color = Color.White.copy(alpha = .8f), strokeWidth = 2.dp)
+                    lyrics == null || lyrics.lines.isEmpty() -> Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.Lyrics, null, Modifier.size(40.dp), tint = Color.White.copy(alpha = .55f))
+                        Spacer(Modifier.height(16.dp))
+                        Text(appString(R.string.text_no_lyrics_found_75127a), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    }
+                    else -> key(song.id, song.playbackSource?.providerId) {
+                        ImmersiveLyrics(lyrics, state.positionSec, state.isPlaying, state.durationSec, onSeek = onSeek,
+                            meanings = meanings, onExplain = onExplain)
+                    }
+                }
+            }
+        }
+        IconButton(onClose, Modifier.align(Alignment.TopStart).padding(12.dp)) {
+            Icon(Icons.Default.CloseFullscreen, appString(R.string.text_collapse_9cf188), tint = Color.White.copy(alpha = .8f))
+        }
+        if (meanings?.hasAbout == true) IconButton(onAbout, Modifier.align(Alignment.TopEnd).padding(12.dp).pointerHoverIcon(PointerIcon.Hand)) {
+            Icon(Icons.Outlined.Info, appString(R.string.genius_about), tint = Color.White.copy(alpha = .8f))
+        }
+        sourceLabel(lyrics?.source, meanings)?.let { Text(it, color = Color.White.copy(alpha = .4f),
+            style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) }
+    }
+}
+
+internal val LocalLyricsInk = compositionLocalOf { Color.Unspecified }
+internal val LocalLyricsRoomy = compositionLocalOf { false }
+
+@Composable
+internal fun LyricsPane(
+    state: PlayerUiState,
+    onSeek: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    compact: Boolean = !LocalLyricsRoomy.current,
+    loadLyrics: suspend (Song) -> Lyrics? = LocalDesktopContainer.current.lyricsRepository::lyricsFor,
+    loadMeanings: suspend (Song) -> com.aurora.music.data.GeniusSong? = defaultMeaningsLoader(),
+) {
+    val song = state.current
+    var lyrics by remember(song.id, song.playbackSource?.providerId) { mutableStateOf<Lyrics?>(null) }
+    var loading by remember(song.id, song.playbackSource?.providerId) { mutableStateOf(true) }
+    LaunchedEffect(song.id, song.playbackSource?.providerId) {
+        lyrics = if (song.id.isBlank()) null else loadLyrics(song)
+        loading = false
+    }
+    val meanings = rememberMeanings(song, lyrics, loadMeanings)
+    var explain by remember(song.id) { mutableStateOf<List<com.aurora.music.data.GeniusReferent>?>(null) }
+    var about by remember(song.id) { mutableStateOf(false) }
+    GeniusSheets(meanings, explain, about) { explain = null; about = false }
+    val own = LocalLyricsInk.current
+    val ink = own.takeOrElse { Color.White }
+    Box(modifier) {
+        if (own.isUnspecified) LyricsBackdrop(song, state.isPlaying)
+        val content = lyrics
+        when {
+            loading -> CircularProgressIndicator(Modifier.align(Alignment.Center).size(28.dp),
+                color = ink.copy(alpha = .8f), strokeWidth = 2.dp)
+            content == null || content.lines.isEmpty() -> Column(
+                Modifier.align(Alignment.Center).padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(Icons.Default.Lyrics, null, Modifier.size(36.dp), tint = ink.copy(alpha = .55f))
+                Spacer(Modifier.height(12.dp))
+                Text(appString(R.string.text_no_lyrics_found_75127a), color = ink,
+                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                if (song.title.isNotBlank()) Text(song.title, color = ink.copy(alpha = .65f),
+                    style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 4.dp))
+            }
+            else -> Column(Modifier.fillMaxSize()) {
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    key(song.id, song.playbackSource?.providerId) {
+                        ImmersiveLyrics(content, state.positionSec, state.isPlaying, state.durationSec, onSeek = onSeek, compact = compact,
+                            meanings = meanings, onExplain = { explain = it })
+                    }
+                }
+                Row(Modifier.align(Alignment.CenterHorizontally).padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    sourceLabel(content.source, meanings)?.let { Text(it, color = ink.copy(alpha = .45f),
+                        style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                    if (meanings?.hasAbout == true) Text(appString(R.string.genius_about), color = ink.copy(alpha = .8f),
+                        style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(start = 10.dp).paperClip(CircleShape).background(ink.copy(alpha = .12f))
+                            .clickable(role = Role.Button) { about = true }.pointerHoverIcon(PointerIcon.Hand)
+                            .padding(horizontal = 10.dp, vertical = 4.dp))
+                }
+            }
+        }
+    }
+}
+
+// artwork tones only app accents never enter this palette
+@Composable
+internal fun LyricsBackdrop(song: Song, playing: Boolean) {
+    val context = LocalPlatformContext.current
+    val neutral = listOf(Color(0xFF39434B), Color(0xFF242B34), Color(0xFF50565A))
+    var tones by remember(song.artworkUrl) { mutableStateOf(neutral) }
+    LaunchedEffect(song.artworkUrl) {
+        if (song.artworkUrl.isBlank()) return@LaunchedEffect
+        val extracted = withContext(Dispatchers.IO) {
+            val palette = artworkPalette(context, song.artworkUrl) ?: return@withContext null
+            val dominant = palette.dominantSwatch ?: return@withContext null
+            val primary = palette.vibrantSwatch ?: dominant
+            val secondary = palette.swatches.filter { it.hsl[1] > .2f && it.hsl[2] in .12f.. .8f }
+                .maxByOrNull {
+                    val hueDistance = abs(it.hsl[0] - primary.hsl[0]).let { distance -> minOf(distance, 360f - distance) }
+                    hueDistance * kotlin.math.sqrt(it.population.toFloat())
+                } ?: palette.mutedSwatch ?: dominant
+            listOf(primary, secondary,
+                palette.lightVibrantSwatch ?: palette.lightMutedSwatch ?: dominant).map {
+                var tone = Color(it.rgb)
+                while (tone.luminance() > .2f) tone = lerp(tone, Color.Black, .1f)
+                tone
+            }
+        }
+        if (extracted != null) tones = extracted
+    }
+    val first by animateColorAsState(tones[0], tween(1100), label = "lyricsPrimary")
+    val second by animateColorAsState(tones[1], tween(1100), label = "lyricsSecondary")
+    val third by animateColorAsState(tones[2], tween(1100), label = "lyricsGlow")
+    val seconds = coverDrift(playing)
+    Canvas(Modifier.fillMaxSize()) {
+        // an 18 s sweep there and back, read here so it only redraws
+        val drift = (seconds.floatValue / 18f % 2f).let { if (it > 1f) 2f - it else it }
+        drawRect(lerp(second, Color.Black, .58f))
+        val radius = size.maxDimension * .85f
+        drawCircle(Brush.radialGradient(listOf(first.copy(alpha = .72f), first.copy(alpha = 0f)),
+            Offset(size.width * (.1f + drift * .55f), size.height * .25f), radius),
+            radius, Offset(size.width * (.1f + drift * .55f), size.height * .25f))
+        drawCircle(Brush.radialGradient(listOf(third.copy(alpha = .45f), third.copy(alpha = 0f)),
+            Offset(size.width * (.95f - drift * .35f), size.height * .8f), radius * .75f),
+            radius * .75f, Offset(size.width * (.95f - drift * .35f), size.height * .8f))
+        drawRect(Brush.verticalGradient(listOf(Color.Black.copy(alpha = .3f),
+            Color.Black.copy(alpha = .18f), Color.Black.copy(alpha = .52f))))
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun ImmersiveLyrics(source: Lyrics, positionSec: Float, playing: Boolean, durationSec: Int, onSeek: (Float) -> Unit, compact: Boolean = false,
+    meanings: com.aurora.music.data.LyricMeanings? = null, onExplain: (List<com.aurora.music.data.GeniusReferent>) -> Unit = {}) {
+    val explainLabel = appString(R.string.genius_explain)
+    val ink = LocalLyricsInk.current.takeOrElse { Color.White }
+    val wordByWord = com.aurora.music.ui.theme.LocalUiPrefs.current.lyricsSync != com.aurora.music.data.LyricsSync.LINE
+    // off the main thread so a cached fetch doesn't put the timing pass in the slide-in
+    val lyrics by produceState(source, source, wordByWord) {
+        value = if (!wordByWord) source
+            else withContext(Dispatchers.Default) { runCatching { source.withWordTiming() }.getOrDefault(source) }
+    }
+    val lines = lyrics.lines
+    // line sync follows the player ticks; only the word wipe needs the in-between clock
+    val clock = rememberLyricsClock(positionSec, playing && wordByWord)
+    val current by remember(lyrics) {
+        derivedStateOf { if (lyrics.synced) lines.indexOfLast { it.startMs >= 0 && it.startMs <= clock.longValue } else -1 }
+    }
+    val list = rememberLazyListState()
+    var browsing by remember { mutableStateOf(false) }
+    val wheel = remember { MutableSharedFlow<Unit>(extraBufferCapacity = 1) }
+    LaunchedEffect(list) {
+        var settle: Job? = null
+        merge(list.interactionSource.interactions.filterIsInstance<DragInteraction>(), wheel).collect { event ->
+            settle?.cancel()
+            browsing = true
+            if (event !is DragInteraction.Start) settle = launch { delay(4500); browsing = false }
+        }
+    }
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val focus = maxHeight * .26f
+        LaunchedEffect(current, browsing, maxHeight) {
+            if (!lyrics.synced || browsing) return@LaunchedEffect
+            val target = current.coerceAtLeast(0)
+            val item = list.layoutInfo.visibleItemsInfo.firstOrNull { it.index == target }
+            // item offsets exclude the top padding where the focus line sits
+            if (item != null) list.animateScrollBy(item.offset.toFloat(), tween(650, easing = FastOutSlowInEasing))
+            else list.animateScrollToItem(target)
+        }
+        LazyColumn(state = list,
+            modifier = Modifier.fillMaxSize().onPointerEvent(PointerEventType.Scroll) { wheel.tryEmit(Unit) }
+                .lyricsEdgeFade().padding(horizontal = if (compact) 24.dp else 28.dp),
+            contentPadding = PaddingValues(top = if (lyrics.synced) focus else 32.dp,
+                bottom = if (lyrics.synced) maxHeight * .7f else 48.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compact) 14.dp else 22.dp),
+        ) {
+            items(lines.size) { index ->
+                var textLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
+                val seekable = lyrics.synced && durationSec > 0 && lines[index].startMs >= 0
+                val seekLine by rememberUpdatedState {
+                    if (seekable) {
+                        browsing = false
+                        onSeek((lines[index].startMs / 1000f / durationSec).coerceIn(0f, 1f))
+                    }
+                }
+                // a click keeps seeking; the mark or a right click explains
+                val notes = meanings?.at(index).orEmpty()
+                val marked = meanings?.markedAt(index) == true
+                val explainLine by rememberUpdatedState { if (notes.isNotEmpty()) onExplain(notes) }
+                val active = index == current
+                val alpha by animateFloatAsState(when {
+                    !lyrics.synced || browsing -> .88f
+                    active -> 1f
+                    index < current -> .35f
+                    else -> .55f
+                }, tween(420), label = "lineOpacity")
+                val scale by animateFloatAsState(if (active || !lyrics.synced || browsing) 1f else .96f,
+                    spring(dampingRatio = .85f, stiffness = 160f), label = "lineEmphasis")
+                val soften by animateFloatAsState(
+                    if (!lyrics.synced || browsing || active) 0f
+                    else ((abs(index - current) - 1).coerceAtLeast(0) * 1.6f).coerceAtMost(7f),
+                    tween(450), label = "lineSoftness")
+                val line = lines[index]
+                val plain = if (wordByWord && active && !browsing && line.words.isNotEmpty())
+                    karaoke(line.displayText, line.charFill(clock.longValue), alpha, ink)
+                else AnnotatedString(line.displayText.ifBlank { "•••" })
+                val text = if (marked) remember(plain) { plain.withMeaningMark() } else plain
+                Text(text,
+                    inlineContent = if (marked) meaningMarkContent(alpha) else emptyMap(),
+                    onTextLayout = { textLayout = it },
+                    color = ink.copy(alpha = alpha), fontSize = if (compact) 22.sp else 30.sp,
+                    lineHeight = if (compact) 29.sp else 38.sp,
+                    fontWeight = FontWeight.Bold, letterSpacing = (-.5).sp,
+                    modifier = Modifier.fillMaxWidth().graphicsLayer {
+                        scaleX = scale; scaleY = scale; transformOrigin = TransformOrigin(0f, .5f)
+                    }.blur(soften.dp).semantics {
+                        selected = active
+                        if (seekable) onClick { seekLine(); true }
+                        if (notes.isNotEmpty()) customActions = listOf(CustomAccessibilityAction(explainLabel) { explainLine(); true })
+                    }.padding(vertical = 6.dp).then(if (seekable) Modifier.pointerHoverIcon(PointerIcon.Hand) else Modifier)
+                        .onPointerEvent(PointerEventType.Press) { if (it.buttons.isSecondaryPressed) explainLine() }
+                        .pointerInput(seekable, marked) {
+                            val slop = 8.dp.toPx()
+                            detectTapGestures { point ->
+                                val layout = textLayout
+                                val line = layout?.getLineForVerticalPosition(point.y)
+                                val onText = layout != null && line != null &&
+                                    point.y >= layout.getLineTop(line) && point.y < layout.getLineBottom(line) &&
+                                    point.x >= layout.getLineLeft(line) && point.x < layout.getLineRight(line)
+                                val onMark = marked && layout?.placeholderRects?.lastOrNull()?.inflate(slop)?.contains(point) == true
+                                if (onMark) explainLine() else if (onText && seekable) seekLine() else if (onText) explainLine()
+                            }
+                        },
+                )
+            }
+        }
+        androidx.compose.animation.AnimatedVisibility(browsing && lyrics.synced,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp)) {
+            Text(appString(R.string.text_back_to_current_line_d5146a), color = Color.White,
+                fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.paperClip(CircleShape).background(Color.Black.copy(alpha = .5f))
+                    .clickable(role = Role.Button) { browsing = false }.pointerHoverIcon(PointerIcon.Hand)
+                    .padding(horizontal = 20.dp, vertical = 14.dp))
+        }
+    }
+}
+
+// extrapolates between player ticks at about 30 Hz, plenty for the soft word wipe
+@Composable
+private fun rememberLyricsClock(positionSec: Float, playing: Boolean): MutableLongState {
+    val clock = remember { mutableLongStateOf((positionSec * 1000).toLong()) }
+    LaunchedEffect(positionSec, playing) {
+        val reported = (positionSec * 1000).toLong()
+        val ahead = clock.longValue - reported
+        val base = if (playing && ahead in 1L..250L) reported + ahead / 2 else reported
+        clock.longValue = base
+        if (!playing) return@LaunchedEffect
+        val start = withFrameMillis { it }
+        while (true) {
+            withFrameMillis { clock.longValue = base + (it - start) }
+            delay(33)
+        }
+    }
+    return clock
+}
+
+private fun karaoke(text: String, fill: FloatArray, alpha: Float, ink: Color): AnnotatedString = buildAnnotatedString {
+    append(text)
+    var i = 0
+    while (i < text.length) {
+        var j = i + 1
+        while (j < text.length && fill[j] == fill[i]) j++
+        addStyle(SpanStyle(color = ink.copy(alpha = alpha * (.4f + .6f * fill[i]))), i, j)
+        i = j
+    }
+}
+
+private fun Modifier.lyricsEdgeFade() = graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        drawRect(Brush.verticalGradient(0f to Color.Transparent, .07f to Color.Black,
+            .9f to Color.Black, 1f to Color.Transparent), blendMode = BlendMode.DstIn)
+    }

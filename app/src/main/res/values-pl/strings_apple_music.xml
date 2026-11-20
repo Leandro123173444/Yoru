@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="apple_music_card_detail">"Katalog Apple odtwarzany przez YouTube"</string>
+    <string name="apple_music_connect_title">"Połącz Apple Music"</string>
+    <string name="apple_music_connect_subtitle">"Przeglądaj katalog i listy przebojów Apple Music. Utwory są odtwarzane przez YouTube."</string>
+    <string name="apple_music_sign_in">"Zaloguj się do Apple Music"</string>
+    <string name="apple_music_sign_in_hint">"Zaloguj się na stronie Apple Music. YORU połączy się, gdy tylko się zalogujesz."</string>
+    <string name="apple_music_waiting">"Zaloguj się za pomocą Apple ID, aby kontynuować."</string>
+    <string name="apple_music_details">"YORU korzysta z nieoficjalnego interfejsu webowego Apple Music i przechowuje Twoje logowanie zaszyfrowane na tym urządzeniu. Utwory są odtwarzane przez YouTube, a nie przez strumienie Apple."</string>
+    <string name="apple_music_connect_failed">"Nie udało się połączyć Apple Music. Spróbuj ponownie."</string>
+    <string name="merge_apple_lyrics">"Teksty z Apple Music"</string>
+    <string name="merge_apple_lyrics_summary">"Zsynchronizowane słowo po słowie teksty z Apple Music dla utworów z dowolnego źródła. Wymaga subskrypcji Apple Music."</string>
+    <string name="lyrics_source_apple_desc">"Dopasowywane w Apple Music, gdy jest połączone; wymaga subskrypcji"</string>
+</resources>

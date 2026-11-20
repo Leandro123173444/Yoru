@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guest_likes_title">"अपनी पसंद %1$s में जोड़ें?"</string>
+    <string name="guest_likes_body">"%2$s से साइन आउट रहते हुए आपने %1$s पसंद किए। जब तक आप इन्हें जोड़ते नहीं, ये इसी डिवाइस पर सहेजे रहेंगे।"</string>
+    <string name="guest_likes_add">"जोड़ें"</string>
+    <string name="guest_likes_later">"अभी नहीं"</string>
+    <string name="guest_likes_added">"%1$s आपकी %2$s पसंद में जोड़े गए"</string>
+    <string name="guest_likes_left">"%1$s नहीं जोड़े जा सके। YORU बाद में फिर पूछेगा।"</string>
+    <string name="guest_sign_in">"साइन इन करें"</string>
+    <string name="guest_likes_held">"%2$s ने %1$s रोक रखे हैं, जब तक आप इंसान होने की जाँच पास नहीं करते। पूरा करने के लिए सेटिंग्स → खाते में %2$s सत्यापित करें।"</string>
+    <string name="guest_library_title">"अपनी पसंद और प्लेलिस्ट %1$s में जोड़ें?"</string>
+    <string name="guest_library_body">"सदस्यता के बिना सहेजे गए %1$s इस डिवाइस पर तब तक रहेंगे जब तक आप उन्हें अपने %2$s खाते में नहीं जोड़ते।"</string>
+    <string name="guest_library_added">"आपकी पसंद और प्लेलिस्ट %1$s में जोड़ दी गईं"</string>
+</resources>

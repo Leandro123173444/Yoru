@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_section">"Steruj innym urządzeniem"</string>
+    <string name="connect_this_device">"To urządzenie"</string>
+    <string name="connect_pair_title">"Sparuj z %1$s"</string>
+    <string name="connect_enter_code">"Wpisz kod wyświetlany na %1$s."</string>
+    <string name="connect_add_by_address">"Dodaj przez adres"</string>
+    <string name="connect_address_help">"Dla Tailscale lub innej sieci wpisz IP albo nazwę urządzenia, np. 100.101.102.103."</string>
+    <string name="connect_device_key">"Klucz urządzenia %1$s"</string>
+    <string name="connect_device_key_help">"Sprawdź, czy drugie urządzenie pokazuje ten sam klucz, a potem wpisz jego kod."</string>
+    <string name="connect_already_paired">"Już sparowano. Nowy adres został zapisany."</string>
+    <string name="connect_switch_title">"Przy zmianie urządzenia"</string>
+    <string name="connect_switch_keep">"Graj dalej na obu"</string>
+    <string name="connect_switch_pause">"Wstrzymaj tutaj"</string>
+    <string name="connect_switch_move">"Przenieś odtwarzanie"</string>
+    <string name="connect_output">"Wyjście"</string>
+    <string name="connect_preset">"Preset"</string>
+    <string name="connect_sources_note">"Utwory są odtwarzane ze źródeł tamtego urządzenia."</string>
+    <string name="connect_reachable_at">"Dostępne pod adresem"</string>
+    <string name="connect_none_found">"Nie znaleziono innych urządzeń YORU. Włącz tam zdalne sterowanie i wyszukaj ponownie."</string>
+    <string name="connect_settings_title">"YORU Connect"</string>
+    <string name="connect_settings_summary">"Steruj innymi urządzeniami YORU lub pozwól im sterować tym"</string>
+    <string name="connect_continue">"Dalej"</string>
+    <string name="connect_this_key">"Klucz tego urządzenia: %1$s"</string>
+    <string name="connect_settings_link">"Kod parowania, adresy i urządzenia"</string>
+    <string name="connect_devices">"Urządzenia"</string>
+    <string name="connect_guide_title">"Jak połączyć"</string>
+    <string name="connect_guide_host">"Na urządzeniu, które ma odtwarzać muzykę, włącz Zezwól na zdalne sterowanie i dotknij Pokaż kod parowania."</string>
+    <string name="connect_guide_pick">"Na urządzeniu, którym sterujesz, otwórz w odtwarzaczu Odtwarzaj na, wybierz to urządzenie i wpisz kod. Parowanie wystarczy raz."</string>
+    <string name="connect_guide_network">"Oba urządzenia muszą być w tej samej sieci Wi-Fi. W innej sieci, np. Tailscale, użyj Dodaj przez adres."</string>
+    <string name="connect_guide_sources">"Muzyka gra z własnych źródeł tamtego urządzenia, więc zaloguj się tam do tej samej usługi. YouTube Music i SoundCloud działają też jako gość."</string>
+    <string name="connect_host_on">"Włączone. Sparowane urządzenia mogą znaleźć to urządzenie i nim sterować."</string>
+    <string name="connect_host_off">"Wyłączone. Włącz, aby inne urządzenie mogło tu odtwarzać muzykę."</string>
+    <string name="connect_idle_connecting">"Łączenie…"</string>
+    <string name="connect_idle_empty">"Nic tam nie gra. Wybierz utwór, aby go uruchomić."</string>
+    <string name="connect_error_unavailable">"%1$s nie może odtworzyć tych utworów. Zaloguj się tam do tej samej usługi muzycznej."</string>
+    <string name="connect_error_disabled">"Zdalne sterowanie jest wyłączone na %1$s. Włącz je tam."</string>
+    <string name="connect_error_unpaired">"%1$s nie akceptuje już tego urządzenia. Sparuj je ponownie."</string>
+    <string name="connect_error_unreachable">"Nie można połączyć się z %1$s. Sprawdź, czy oba urządzenia są w tej samej sieci i czy YORU jest tam otwarta."</string>
+    <string name="connect_error_lost">"Utracono połączenie z %1$s."</string>
+</resources>

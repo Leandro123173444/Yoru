@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guest_likes_title">"Добавить лайки в %1$s?"</string>
+    <string name="guest_likes_body">"Вы лайкнули %1$s, не войдя в %2$s. Они хранятся на этом устройстве, пока вы их не добавите."</string>
+    <string name="guest_likes_add">"Добавить"</string>
+    <string name="guest_likes_later">"Не сейчас"</string>
+    <string name="guest_likes_added">"%1$s добавлено в лайки %2$s"</string>
+    <string name="guest_likes_left">"Не удалось добавить: %1$s. YORU спросит ещё раз позже."</string>
+    <string name="guest_sign_in">"Войти"</string>
+    <string name="guest_likes_held">"%2$s удерживает %1$s, пока вы не пройдёте проверку на человека. Подтвердите %2$s в Настройки → Аккаунты, чтобы завершить."</string>
+    <string name="guest_library_title">"Добавить лайки и плейлисты в %1$s?"</string>
+    <string name="guest_library_body">"Сохранённое без подписки (%1$s) хранится на этом устройстве, пока вы не добавите его в аккаунт %2$s."</string>
+    <string name="guest_library_added">"Лайки и плейлисты добавлены в %1$s"</string>
+</resources>

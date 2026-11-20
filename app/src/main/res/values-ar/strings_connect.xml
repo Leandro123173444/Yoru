@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_section">"⁧التحكم في جهاز آخر⁩"</string>
+    <string name="connect_this_device">"⁧هذا الجهاز⁩"</string>
+    <string name="connect_pair_title">"⁧الاقتران مع %1$s⁩"</string>
+    <string name="connect_enter_code">"⁧أدخل الرمز الظاهر على %1$s.⁩"</string>
+    <string name="connect_add_by_address">"⁧الإضافة بالعنوان⁩"</string>
+    <string name="connect_address_help">"⁧لشبكة Tailscale أو شبكة أخرى، أدخل عنوان IP للجهاز أو اسمه، مثل 100.101.102.103.⁩"</string>
+    <string name="connect_device_key">"⁧مفتاح الجهاز %1$s⁩"</string>
+    <string name="connect_device_key_help">"⁧تأكد من أن الجهاز الآخر يعرض المفتاح نفسه، ثم أدخل رمزه.⁩"</string>
+    <string name="connect_already_paired">"⁧مقترن بالفعل. تم حفظ العنوان الجديد.⁩"</string>
+    <string name="connect_switch_title">"⁧عند تبديل الأجهزة⁩"</string>
+    <string name="connect_switch_keep">"⁧متابعة التشغيل على الجهازين⁩"</string>
+    <string name="connect_switch_pause">"⁧إيقاف مؤقت هنا⁩"</string>
+    <string name="connect_switch_move">"⁧نقل التشغيل⁩"</string>
+    <string name="connect_output">"⁧الإخراج⁩"</string>
+    <string name="connect_preset">"⁧الإعداد المسبق⁩"</string>
+    <string name="connect_sources_note">"⁧تُشغَّل الأغاني من مصادر ذلك الجهاز.⁩"</string>
+    <string name="connect_reachable_at">"⁧متاح على⁩"</string>
+    <string name="connect_none_found">"⁧لم يتم العثور على أجهزة YORU أخرى. فعّل التحكم عن بُعد هناك ثم ابحث مجددًا.⁩"</string>
+    <string name="connect_settings_title">"⁧YORU Connect⁩"</string>
+    <string name="connect_settings_summary">"⁧تحكم في أجهزة YORU الأخرى أو اسمح لها بالتحكم في هذا الجهاز⁩"</string>
+    <string name="connect_continue">"⁧متابعة⁩"</string>
+    <string name="connect_this_key">"⁧مفتاح هذا الجهاز: %1$s⁩"</string>
+    <string name="connect_settings_link">"⁧رمز الاقتران والعناوين والأجهزة⁩"</string>
+    <string name="connect_devices">"⁧الأجهزة⁩"</string>
+    <string name="connect_guide_title">"⁧طريقة الاتصال⁩"</string>
+    <string name="connect_guide_host">"⁧على الجهاز الذي سيشغّل الموسيقى، فعّل السماح بالتحكم عن بُعد ثم اضغط عرض رمز الاقتران.⁩"</string>
+    <string name="connect_guide_pick">"⁧على الجهاز الذي تتحكم منه، افتح التشغيل على في المشغّل، واختر ذلك الجهاز وأدخل الرمز. يكفي الاقتران مرة واحدة.⁩"</string>
+    <string name="connect_guide_network">"⁧اجعل الجهازين على شبكة Wi-Fi نفسها. على شبكة أخرى مثل Tailscale، استخدم الإضافة بالعنوان.⁩"</string>
+    <string name="connect_guide_sources">"⁧تُشغَّل الموسيقى من مصادر ذلك الجهاز نفسه، لذا سجّل الدخول هناك إلى الخدمة نفسها. يعمل YouTube Music وSoundCloud أيضًا كضيف.⁩"</string>
+    <string name="connect_host_on">"⁧مفعّل. يمكن للأجهزة المقترنة العثور على هذا الجهاز والتحكم فيه.⁩"</string>
+    <string name="connect_host_off">"⁧متوقف. فعّله ليتمكن جهاز آخر من تشغيل الموسيقى هنا.⁩"</string>
+    <string name="connect_idle_connecting">"⁧جارٍ الاتصال…⁩"</string>
+    <string name="connect_idle_empty">"⁧لا شيء قيد التشغيل هناك. اختر أغنية لبدء التشغيل.⁩"</string>
+    <string name="connect_error_unavailable">"⁧لا يمكن لـ %1$s تشغيل هذه الأغاني. سجّل الدخول هناك إلى خدمة الموسيقى نفسها.⁩"</string>
+    <string name="connect_error_disabled">"⁧التحكم عن بُعد متوقف على %1$s. فعّله هناك.⁩"</string>
+    <string name="connect_error_unpaired">"⁧لم يعد %1$s يقبل هذا الجهاز. أعد الاقتران.⁩"</string>
+    <string name="connect_error_unreachable">"⁧تعذّر الوصول إلى %1$s. تحقق من أن الجهازين على الشبكة نفسها وأن YORU مفتوح هناك.⁩"</string>
+    <string name="connect_error_lost">"⁧انقطع الاتصال بـ %1$s.⁩"</string>
+</resources>

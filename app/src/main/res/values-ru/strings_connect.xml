@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_section">"Управлять другим устройством"</string>
+    <string name="connect_this_device">"Это устройство"</string>
+    <string name="connect_pair_title">"Сопряжение с %1$s"</string>
+    <string name="connect_enter_code">"Введите код, показанный на %1$s."</string>
+    <string name="connect_add_by_address">"Добавить по адресу"</string>
+    <string name="connect_address_help">"Для Tailscale или другой сети введите IP или имя устройства, например 100.101.102.103."</string>
+    <string name="connect_device_key">"Ключ устройства %1$s"</string>
+    <string name="connect_device_key_help">"Убедитесь, что на другом устройстве тот же ключ, затем введите его код."</string>
+    <string name="connect_already_paired">"Уже сопряжено. Новый адрес сохранён."</string>
+    <string name="connect_switch_title">"При переключении устройств"</string>
+    <string name="connect_switch_keep">"Играть на обоих"</string>
+    <string name="connect_switch_pause">"Пауза здесь"</string>
+    <string name="connect_switch_move">"Перенести воспроизведение"</string>
+    <string name="connect_output">"Выход"</string>
+    <string name="connect_preset">"Пресет"</string>
+    <string name="connect_sources_note">"Песни воспроизводятся из источников того устройства."</string>
+    <string name="connect_reachable_at">"Доступно по адресу"</string>
+    <string name="connect_none_found">"Другие устройства YORU не найдены. Включите там удалённое управление и повторите поиск."</string>
+    <string name="connect_settings_title">"YORU Connect"</string>
+    <string name="connect_settings_summary">"Управляйте другими устройствами YORU или позвольте им управлять этим"</string>
+    <string name="connect_continue">"Продолжить"</string>
+    <string name="connect_this_key">"Ключ этого устройства: %1$s"</string>
+    <string name="connect_settings_link">"Код сопряжения, адреса и устройства"</string>
+    <string name="connect_devices">"Устройства"</string>
+    <string name="connect_guide_title">"Как подключить"</string>
+    <string name="connect_guide_host">"На устройстве, которое будет играть музыку, включите «Разрешить удалённое управление» и нажмите «Показать код сопряжения»."</string>
+    <string name="connect_guide_pick">"На устройстве, с которого управляете, откройте в плеере «Слушать на», выберите это устройство и введите код. Сопряжение нужно только один раз."</string>
+    <string name="connect_guide_network">"Оба устройства должны быть в одной сети Wi-Fi. В другой сети, например Tailscale, используйте «Добавить по адресу»."</string>
+    <string name="connect_guide_sources">"Музыка играет из собственных источников того устройства, поэтому войдите там в тот же сервис. YouTube Music и SoundCloud работают и в гостевом режиме."</string>
+    <string name="connect_host_on">"Включено. Сопряжённые устройства могут найти это устройство и управлять им."</string>
+    <string name="connect_host_off">"Выключено. Включите, чтобы другое устройство могло включать здесь музыку."</string>
+    <string name="connect_idle_connecting">"Подключение…"</string>
+    <string name="connect_idle_empty">"Там ничего не играет. Выберите трек, чтобы начать."</string>
+    <string name="connect_error_unavailable">"%1$s не может воспроизвести эти треки. Войдите там в тот же музыкальный сервис."</string>
+    <string name="connect_error_disabled">"Удалённое управление выключено на %1$s. Включите его там."</string>
+    <string name="connect_error_unpaired">"%1$s больше не принимает это устройство. Выполните сопряжение заново."</string>
+    <string name="connect_error_unreachable">"Не удаётся связаться с %1$s. Проверьте, что оба устройства в одной сети и YORU там открыта."</string>
+    <string name="connect_error_lost">"Соединение с %1$s потеряно."</string>
+</resources>

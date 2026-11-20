@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="soundcloud_card_detail">"Deine Likes, Playlists und dein Feed"</string>
+    <string name="soundcloud_connect_title">"SoundCloud verbinden"</string>
+    <string name="soundcloud_connect_subtitle">"Deine Likes, Playlists und die Künstler, denen du folgst"</string>
+    <string name="soundcloud_sign_in">"Bei SoundCloud anmelden"</string>
+    <string name="soundcloud_sign_in_hint">"Melde dich auf der SoundCloud-Seite an. YORU verbindet sich, sobald du angemeldet bist."</string>
+    <string name="soundcloud_waiting">"Melde dich an, um fortzufahren. Wird die Google-Anmeldung hier abgelehnt, melde dich stattdessen mit deiner E-Mail an."</string>
+    <string name="soundcloud_details">"YORU nutzt die inoffizielle Weboberfläche von SoundCloud und speichert deine Anmeldung verschlüsselt auf diesem Gerät."</string>
+    <string name="soundcloud_connect_failed">"SoundCloud konnte nicht verbunden werden. Bitte versuche es erneut."</string>
+    <string name="soundcloud_page_failed">"Die Anmeldeseite konnte nicht geladen werden. Prüfe deine Verbindung und lade neu."</string>
+    <string name="soundcloud_captcha_hint">"SoundCloud möchte vor dem Speichern prüfen, ob du ein Mensch bist. Löse die Prüfung einmal, dann schließt YORU die Änderung ab."</string>
+    <string name="player_comments">"Kommentare"</string>
+    <string name="player_soundcloud_comments">"SoundCloud-Kommentare"</string>
+    <string name="comments_empty">"Noch keine Kommentare. Sei der Erste."</string>
+    <string name="comments_none">"Hier gibt es noch keine Kommentare"</string>
+    <string name="comment_hint_untimed">"Kommentar hinzufügen…"</string>
+    <string name="comment_like_failed">"Das Like konnte nicht gespeichert werden. Versuch es noch einmal."</string>
+    <string name="comment_hint">"Kommentar bei %1$s"</string>
+    <string name="comment_post">"Senden"</string>
+    <string name="comment_failed">"Dein Kommentar konnte nicht gesendet werden. Versuche es erneut."</string>
+    <string name="soundcloud_verify">"SoundCloud verifizieren"</string>
+    <string name="soundcloud_verify_detail">"Sendet wartende Likes und Follows. SoundCloud fragt eventuell zuerst, ob du ein Mensch bist."</string>
+    <string name="soundcloud_verify_done">"SoundCloud ist auf dem neuesten Stand."</string>
+    <string name="soundcloud_verify_failed">"SoundCloud muss dich noch verifizieren. Versuche es erneut."</string>
+    <string name="soundcloud_verify_waiting">"Wartend: %1$d"</string>
+    <string name="comment_needs_verify">"SoundCloud möchte prüfen, ob du ein Mensch bist. Öffne Einstellungen → Konten und wähle SoundCloud verifizieren."</string>
+</resources>

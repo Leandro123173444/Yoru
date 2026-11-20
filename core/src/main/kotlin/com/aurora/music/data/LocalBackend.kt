@@ -1,0 +1,231 @@
+package com.aurora.music.data
+
+import com.aurora.music.model.Album
+import com.aurora.music.model.Artist
+import com.aurora.music.model.DetailInfo
+import com.aurora.music.model.Playlist
+import com.aurora.music.model.Song
+import com.aurora.music.util.TrackMatch
+import com.aurora.music.util.accentArgbFor
+
+// mediabackend over on-device files only server-only ops are no-ops
+class LocalBackend(
+    private val library: LocalCatalog,
+    private val store: LocalStore,
+    override val session: Session,
+) : MediaBackend {
+
+    private fun LocalPlaylist.entries(): List<Song> {
+        val others = foreign.orEmpty().associateBy { it.id }
+        return trackIds.orEmpty().mapNotNull { library.song(it) ?: others[it]?.toSong() }
+    }
+
+    // the list counts songs from merged sources too; only the merged library can open those, apart from catalogue songs that stream on their own
+    private fun LocalPlaylist.toPlaylist(): Playlist {
+        val tracks = entries()
+        return Playlist(
+            id = id,
+            title = title ?: "",
+            subtitle = (subtitle ?: "").ifBlank { "${tracks.size} song${if (tracks.size == 1) "" else "s"}" },
+            coverUrl = tracks.firstOrNull { it.artworkUrl.isNotBlank() }?.artworkUrl ?: "",
+            songCount = tracks.size,
+            accentArgb = accentArgbFor(id),
+        )
+    }
+
+    override suspend fun ping(): Boolean = true
+
+    override suspend fun home(): HomeData {
+        library.ensureLoaded()
+        val albums = library.albums
+        return HomeData(
+            newReleases = albums.take(20),                                   // locallibrary already sorts by date added
+            mostPlayed = albums.sortedByDescending { it.songCount }.take(20),
+            playlists = store.playlists().map { it.toPlaylist() },
+            artists = library.artists.take(40),
+            starred = starredSongs().take(40),
+        )
+    }
+
+    override suspend fun allAlbums(): List<Album> { library.ensureLoaded(); return library.albums }
+    override suspend fun allArtists(): List<Artist> { library.ensureLoaded(); return library.artists }
+    override suspend fun allPlaylists(): List<Playlist> = store.playlists().map { it.toPlaylist() }
+    override suspend fun allSongs(): List<Song> { library.ensureLoaded(); return library.songs }
+
+    override suspend fun songsPage(offset: Int, count: Int): List<Song> {
+        library.ensureLoaded()
+        return library.songs.drop(offset).take(count)
+    }
+
+    override suspend fun starredSongs(): List<Song> {
+        library.ensureLoaded()
+        val liked = store.likedIds()
+        return library.songs.filter { it.id in liked }
+    }
+
+    override suspend fun starredCount(): Int = starredSongs().size
+
+    override suspend fun starredIds(): Set<String> = store.likedIds()
+
+    override suspend fun songFor(id: String): Song? { library.ensureLoaded(); return library.song(id) }
+
+    override suspend fun likedSongIds(ids: List<String>): Set<String> {
+        val liked = store.likedIds()
+        return ids.filterTo(HashSet()) { it in liked }
+    }
+
+    override suspend fun search(query: String): SearchResults {
+        library.ensureLoaded()
+        val q = query.trim()
+        if (q.isBlank()) return SearchResults()
+        return SearchResults(
+            songs = (library.songs.asSequence().filter { it.title.contains(q, true) || it.artist.contains(q, true) || it.album.contains(q, true) }.take(60).toList() +
+                withEveryWord(q)).distinctBy { it.id }.take(60),
+            albums = library.albums.filter { it.title.contains(q, true) || it.artist.contains(q, true) }.take(30),
+            artists = library.artists.filter { it.name.contains(q, true) }.take(30),
+            playlists = store.playlists().map { it.toPlaylist() }.filter { it.title.contains(q, true) }.take(20),
+        )
+    }
+
+    @Volatile private var wordIndex: Pair<List<Song>, Map<String, IntArray>>? = null
+
+    private fun words(text: String) = TrackMatch.norm(text).split(' ').filter { it.isNotEmpty() }.toSet()
+
+    // "artist title" sits in no single field, so a song that holds every word anywhere counts too
+    private fun withEveryWord(query: String): List<Song> {
+        val wanted = words(query).takeIf { it.size > 1 } ?: return emptyList()
+        val songs = library.songs
+        val index = wordIndex?.takeIf { it.first === songs } ?: (songs to songs.indices
+            .flatMap { i -> words("${songs[i].artist} ${songs[i].title} ${songs[i].album}").map { it to i } }
+            .groupBy({ it.first }, { it.second }).mapValues { it.value.toIntArray() }).also { wordIndex = it }
+        val lists = wanted.map { index.second[it] ?: return emptyList() }.sortedBy { it.size }
+        return lists.first().filter { i -> lists.all { it.binarySearch(i) >= 0 } }.map { songs[it] }
+    }
+
+    // a rescan replaces the list, which is what rebuilds this
+    @Volatile private var titleIndex: Pair<List<Song>, Map<String, List<Song>>>? = null
+
+    override suspend fun matchingSongs(song: Song): List<Song> {
+        library.ensureLoaded()
+        if (song.title.isBlank()) return emptyList()
+        val songs = library.songs
+        val index = titleIndex?.takeIf { it.first === songs } ?: (songs to songs.groupBy { recordingKey(it.title) }).also { titleIndex = it }
+        return index.second[recordingKey(song.title)].orEmpty()
+    }
+
+    @Volatile private var fileIndex: Pair<List<Song>, Map<String, List<Song>>>? = null
+
+    override suspend fun fileCopy(track: ImportTrack): Song? {
+        if (track.location.isBlank()) return null
+        library.ensureLoaded()
+        val songs = library.songs
+        val index = fileIndex?.takeIf { it.first === songs } ?: (songs to LocalCatalogIndex.fileIndex(songs)).also { fileIndex = it }
+        return LocalCatalogIndex.findFile(index.second, track.location) ?: library.findMatch(track.artist, track.title, track.durationSec)
+    }
+
+    override suspend fun scrobble(id: String) { /* last.fm handled separately */ }
+
+    override suspend fun radio(seedId: String): List<Song> {
+        library.ensureLoaded()
+        val seed = library.song(seedId)
+        val sameArtist = seed?.let { s -> library.songsByArtistId(s.artistId).filter { it.id != seedId } }.orEmpty()
+        val taken = sameArtist.mapTo(HashSet()) { it.id }
+        val rest = library.songs.filter { it.id != seedId && it.id !in taken }.shuffled()
+        return (sameArtist.shuffled() + rest).take(40)
+    }
+
+    override suspend fun collectionTracks(kind: String, id: String): List<Song> =
+        detail(kind, id)?.tracks ?: error("This collection is unavailable.")
+
+    override suspend fun detail(kind: String, id: String): DetailData? {
+        library.ensureLoaded()
+        return when (kind) {
+            "album" -> {
+                val tracks = library.songsByAlbumId(id)
+                val album = library.albums.firstOrNull { it.id == id } ?: return null
+                DetailData(
+                    info = DetailInfo(album.title, album.artist, album.artworkUrl, accentArgbFor(id), false, tracks.size, album.typeLabel),
+                    tracks = tracks,
+                )
+            }
+            "artist" -> {
+                val artist = library.artist(id) ?: return null
+                val tracks = library.songsByArtistId(id)
+                val albums = library.albumsByArtistId(id)
+                DetailData(
+                    info = DetailInfo(artist.name, "${tracks.size} song${if (tracks.size == 1) "" else "s"}", artist.imageUrl, accentArgbFor(id), true, tracks.size, "Artist"),
+                    tracks = tracks,
+                    albums = albums,
+                )
+            }
+            "playlist" -> {
+                val pl = store.playlist(id) ?: return null
+                val tracks = pl.entries().filter { MERGE_NAMESPACE_SEP !in it.id || it.streamUrl.startsWith("aurora-yt://") || it.streamUrl.startsWith("aurora-sc://") }
+                DetailData(
+                    info = DetailInfo(pl.title ?: "", "${tracks.size} song${if (tracks.size == 1) "" else "s"}", tracks.firstOrNull { it.artworkUrl.isNotBlank() }?.artworkUrl ?: "", accentArgbFor(id), false, tracks.size, "Playlist",
+                        editableDescription = pl.subtitle.orEmpty(), description = pl.subtitle.orEmpty()),
+                    tracks = tracks,
+                )
+            }
+            "liked" -> {
+                val tracks = starredSongs()
+                DetailData(
+                    info = DetailInfo("Liked Songs", "${tracks.size} song${if (tracks.size == 1) "" else "s"}", tracks.firstOrNull()?.artworkUrl ?: "", accentArgbFor("liked"), false, tracks.size, "Liked"),
+                    tracks = tracks,
+                )
+            }
+            else -> null
+        }
+    }
+
+    override suspend fun setStarred(id: String, starred: Boolean, kind: String): Boolean = store.setLiked(id, starred)
+
+    override suspend fun createPlaylist(name: String): Boolean { store.createPlaylist(name); return true }
+
+    override suspend fun createPlaylistWithId(name: String): String? = store.createPlaylist(name)
+
+    override suspend fun updatePlaylist(id: String, name: String?, comment: String?): Boolean {
+        store.updatePlaylist(id, name, comment); return true
+    }
+
+    override suspend fun deletePlaylist(id: String): Boolean { store.deletePlaylist(id); return true }
+
+    override suspend fun addToPlaylist(playlistId: String, trackIds: List<String>): Boolean { store.addTracks(playlistId, trackIds); return true }
+    override val acceptsForeignTracks get() = true
+    override suspend fun addSongsToPlaylist(playlistId: String, songs: List<Song>): Boolean {
+        store.addTracks(playlistId, songs.map { it.id }, songs.filter { MERGE_NAMESPACE_SEP in it.id }.map { it.toSavedTrack() })
+        return true
+    }
+    override suspend fun createMixedPlaylist(name: String, songs: List<Song>): String? {
+        val id = store.createPlaylist(name.trim())
+        return id.takeIf { addSongsToPlaylist(it, songs) }
+    }
+    override suspend fun playlistEntries(id: String): List<Song>? = store.playlist(id)?.entries()
+    override suspend fun removeFromPlaylist(playlistId: String, trackIds: List<String>): Boolean { store.removeTracks(playlistId, trackIds); return true }
+
+    // folder tree rooted at the deepest common directory
+
+    override val supportsFolders: Boolean get() = true
+
+    override suspend fun browseFolder(folderId: String): FolderContent? {
+        library.ensureLoaded()
+        val base = folderId.ifBlank { library.folderRoot }
+        if (base.isBlank()) return null
+        val (subdirs, tracks) = library.browse(base)
+        return FolderContent(
+            id = base,
+            title = if (folderId.isBlank()) "Folders" else base.substringAfterLast('/'),
+            folders = subdirs.map { FolderNode("$base/$it", it) },
+            songs = tracks,
+        )
+    }
+
+    override suspend fun serverLyrics(song: Song): Lyrics? = null
+
+    override fun streamUrl(songId: String, maxBitrate: Int, lossless: Boolean): String =
+        library.song(songId)?.streamUrl ?: ""
+
+    override fun coverArtUrl(id: String, size: Int): String =
+        library.albums.firstOrNull { it.id == id }?.artworkUrl
+            ?: library.song(id)?.artworkUrl ?: ""
+}

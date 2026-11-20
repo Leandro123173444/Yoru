@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="soundcloud_card_detail">"Beğenilerin, çalma listelerin ve akışın"</string>
+    <string name="soundcloud_connect_title">"SoundCloud\'u bağla"</string>
+    <string name="soundcloud_connect_subtitle">"Beğenilerin, çalma listelerin ve takip ettiğin sanatçılar"</string>
+    <string name="soundcloud_sign_in">"SoundCloud\'a giriş yap"</string>
+    <string name="soundcloud_sign_in_hint">"SoundCloud sayfasında giriş yap. Giriş yapar yapmaz YORU bağlanır."</string>
+    <string name="soundcloud_waiting">"Devam etmek için giriş yap. Google ile giriş burada reddedilirse e-postanla giriş yap."</string>
+    <string name="soundcloud_details">"YORU, SoundCloud\'un resmi olmayan web arayüzünü kullanır ve girişini bu cihazda şifreli olarak saklar."</string>
+    <string name="soundcloud_connect_failed">"SoundCloud bağlanamadı. Lütfen tekrar dene."</string>
+    <string name="soundcloud_page_failed">"Giriş sayfası yüklenemedi. Bağlantını kontrol edip yeniden yükle."</string>
+    <string name="soundcloud_captcha_hint">"SoundCloud bu değişikliği kaydetmeden önce insan olduğunu doğrulamak istiyor. Bir kez çöz, YORU değişikliği tamamlasın."</string>
+    <string name="player_comments">"Yorumlar"</string>
+    <string name="player_soundcloud_comments">"SoundCloud Yorumları"</string>
+    <string name="comments_empty">"Henüz yorum yok. İlk yorumu sen yap."</string>
+    <string name="comments_none">"Burada henüz yorum yok"</string>
+    <string name="comment_hint_untimed">"Yorum ekle…"</string>
+    <string name="comment_like_failed">"Beğeni güncellenemedi. Tekrar deneyin."</string>
+    <string name="comment_hint">"%1$s anına yorum"</string>
+    <string name="comment_post">"Gönder"</string>
+    <string name="comment_failed">"Yorumun gönderilemedi. Tekrar dene."</string>
+    <string name="soundcloud_verify">"SoundCloud\'u doğrula"</string>
+    <string name="soundcloud_verify_detail">"Bekleyen beğenileri ve takipleri gönderir. SoundCloud önce insan olduğunuzu kanıtlamanızı isteyebilir."</string>
+    <string name="soundcloud_verify_done">"SoundCloud güncel."</string>
+    <string name="soundcloud_verify_failed">"SoundCloud hâlâ doğrulamanızı bekliyor. Tekrar deneyin."</string>
+    <string name="soundcloud_verify_waiting">"Bekleyen: %1$d"</string>
+    <string name="comment_needs_verify">"SoundCloud insan olduğunuzu doğrulamak istiyor. Ayarlar → Hesaplar bölümüne gidip SoundCloud\'u doğrula seçeneğini seçin."</string>
+</resources>

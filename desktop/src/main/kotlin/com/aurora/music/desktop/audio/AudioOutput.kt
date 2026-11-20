@@ -1,0 +1,88 @@
+package com.aurora.music.desktop.audio
+
+import com.aurora.music.desktop.natives.AudioDevice
+import com.aurora.music.desktop.natives.AudioDevices
+import com.aurora.music.desktop.natives.DeviceEvent
+import com.aurora.music.desktop.natives.OutputEncoding
+import com.aurora.music.desktop.natives.OutputStatus
+import com.aurora.music.desktop.natives.SystemNative
+import com.aurora.music.desktop.natives.WasapiNative
+import com.aurora.music.desktop.natives.WasapiOutput
+import com.aurora.music.desktop.platform.HostPlatform
+
+interface AudioOutput : AutoCloseable {
+    val id: Long
+    val deviceId: String?
+    val exclusive: Boolean
+    val sampleRate: Int
+    val encoding: OutputEncoding
+    fun write(bytes: ByteArray, offset: Int, length: Int, timeoutMs: Int): Int
+    fun resume()
+    fun pause()
+    fun flush()
+    fun status(): OutputStatus
+}
+
+interface OutputBackend {
+    val exclusiveAvailable: Boolean get() = true
+    fun devices(): List<AudioDevice>
+    fun mixRate(deviceId: String?): Int?
+    fun supportsExclusive(deviceId: String?, sampleRate: Int, encoding: OutputEncoding): Boolean
+    fun exclusiveUnavailableReason(deviceId: String?): String? = null
+    fun open(deviceId: String?, exclusive: Boolean, sampleRate: Int, encoding: OutputEncoding, bufferMs: Int): AudioOutput
+    fun listen(listener: (DeviceEvent) -> Unit): AutoCloseable
+    fun keepAwake(enabled: Boolean)
+    fun hardwareVolume(deviceId: String): HardwareVolume? = null
+}
+
+class WasapiAudioOutput(private val output: WasapiOutput) : AudioOutput {
+    override val id: Long get() = output.id
+    override val deviceId: String? get() = output.deviceId
+    override val exclusive: Boolean get() = output.exclusive
+    override val sampleRate: Int get() = output.sampleRate
+    override val encoding: OutputEncoding get() = output.encoding
+    override fun write(bytes: ByteArray, offset: Int, length: Int, timeoutMs: Int) = output.write(bytes, offset, length, timeoutMs)
+    override fun resume() = output.resume()
+    override fun pause() = output.pause()
+    override fun flush() = output.flush()
+    override fun status() = output.status()
+    override fun close() = output.close()
+}
+
+fun defaultOutputBackend(): OutputBackend = when {
+    HostPlatform.isWindows -> WasapiBackend
+    HostPlatform.isLinux -> LinuxOutputBackend.instance
+    else -> JavaSoundBackend
+}
+
+fun outputApis(): String = when {
+    HostPlatform.isWindows -> "WASAPI"
+    HostPlatform.isLinux && LinuxOutputBackend.instance.exclusiveAvailable -> "Java Sound · ALSA"
+    else -> "Java Sound"
+}
+
+fun outputApi(exclusive: Boolean): String = when {
+    HostPlatform.isWindows -> "WASAPI"
+    exclusive -> "ALSA"
+    else -> "Java Sound"
+}
+
+object WasapiBackend : OutputBackend {
+    override fun devices() = AudioDevices.list()
+    override fun mixRate(deviceId: String?) = AudioDevices.mixFormat(deviceId)?.sampleRate
+    override fun supportsExclusive(deviceId: String?, sampleRate: Int, encoding: OutputEncoding) =
+        AudioDevices.supportsExclusive(deviceId, sampleRate, encoding)
+    override fun open(deviceId: String?, exclusive: Boolean, sampleRate: Int, encoding: OutputEncoding, bufferMs: Int): AudioOutput =
+        WasapiAudioOutput(WasapiOutput.open(deviceId, exclusive, sampleRate = sampleRate, encoding = encoding, bufferMs = bufferMs))
+    override fun listen(listener: (DeviceEvent) -> Unit) = AudioDevices.addListener(listener)
+    override fun keepAwake(enabled: Boolean) { SystemNative.keepAwake(enabled) }
+    override fun hardwareVolume(deviceId: String): HardwareVolume = WasapiHardwareVolume(deviceId)
+}
+
+class WasapiHardwareVolume(private val deviceId: String) : HardwareVolume {
+    override fun read(): HardwareLevel? = WasapiNative.hardwareVolume(deviceId)?.takeIf { it.size >= 5 }?.let {
+        HardwareLevel(it[0].toDouble(), it[1].toDouble(), it[3].toDouble(), it[4] != 0f)
+    }
+
+    override fun write(db: Double, mute: Boolean) = WasapiNative.setHardwareVolume(deviceId, db.toFloat(), mute) >= 0
+}

@@ -1,0 +1,67 @@
+package com.aurora.music.desktop.platform
+
+import coil3.ImageLoader
+import coil3.PlatformContext
+import coil3.Uri
+import coil3.decode.DataSource
+import coil3.decode.ImageSource
+import coil3.disk.DiskCache
+import coil3.fetch.FetchResult
+import coil3.fetch.Fetcher
+import coil3.fetch.SourceFetchResult
+import coil3.memory.MemoryCache
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
+import coil3.request.Options
+import coil3.size.pxOrElse
+import com.aurora.music.data.artwork.ArtworkRepository
+import com.aurora.music.data.artwork.ArtworkUrls
+import okhttp3.OkHttpClient
+import okio.Buffer
+import okio.FileSystem
+import okio.Path.Companion.toOkioPath
+import java.io.File
+import java.io.FileNotFoundException
+import java.net.URI
+import java.nio.file.Path
+
+class ArtworkFetcher(private val repository: ArtworkRepository, private val uri: String) : Fetcher {
+    override suspend fun fetch(): FetchResult {
+        val request = ArtworkUrls.decode(uri) ?: throw FileNotFoundException("Invalid artwork uri")
+        val bytes = repository.open(request) { it.readBytes() }
+        return SourceFetchResult(ImageSource(Buffer().write(bytes), FileSystem.SYSTEM), null, DataSource.DISK)
+    }
+
+    class Factory(private val repository: ArtworkRepository) : Fetcher.Factory<Uri> {
+        override fun create(data: Uri, options: Options, imageLoader: ImageLoader): Fetcher? =
+            if (ArtworkUrls.isArtwork(data.toString())) ArtworkFetcher(repository, data.toString()) else null
+    }
+}
+
+// coil mangles non-ascii file uris so they are parsed with java.net.URI
+class LocalFileFetcher(private val path: Path) : Fetcher {
+    override suspend fun fetch(): FetchResult = SourceFetchResult(ImageSource(path.toOkioPath(), FileSystem.SYSTEM), null, DataSource.DISK)
+
+    class Factory : Fetcher.Factory<Uri> {
+        override fun create(data: Uri, options: Options, imageLoader: ImageLoader): Fetcher? =
+            if (data.scheme != "file") null else runCatching { Path.of(URI(data.toString())) }.getOrNull()?.let(::LocalFileFetcher)
+    }
+}
+
+fun desktopImageLoader(cacheDir: File, http: OkHttpClient, artwork: ArtworkRepository): ImageLoader =
+    ImageLoader.Builder(PlatformContext.INSTANCE)
+        .components {
+            // upgrading before coil's cache key also replaces small art saved in queues, history and playlists
+            add(coil3.map.Mapper<String, String> { data, options ->
+                com.aurora.music.data.remote.YouTubeMusicParser.sized(data, options.size.width.pxOrElse { 0 }, options.size.height.pxOrElse { 0 })
+            })
+            add(ArtworkFetcher.Factory(artwork))
+            add(LocalFileFetcher.Factory())
+            add(OkHttpNetworkFetcherFactory(callFactory = { http.newBuilder().addInterceptor(::youtubeArtworkFallback).build() }))
+        }
+        // a share of the max heap meant gigabytes of decoded covers in native memory
+        .memoryCache { MemoryCache.Builder().maxSizeBytes(128L * 1024 * 1024).build() }
+        .diskCache { DiskCache.Builder().directory(cacheDir.toOkioPath()).maxSizeBytes(256L * 1024 * 1024).build() }
+        .build()
+
+private fun youtubeArtworkFallback(chain: okhttp3.Interceptor.Chain): okhttp3.Response =
+    com.aurora.music.data.remote.YouTubeArtworkFallback.intercept(chain)

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="theme_paper_name">"Kertas"</string>
+    <string name="theme_paper_description">"YORU, sebagai aplikasi"</string>
+    <string name="theme_paper_detail">"Kertas dan tinta · aksen merah muda · bingkai tipis · sudut tegas · huruf Archivo"</string>
+    <string name="theme_paper_light_only">"Kertas hanya tersedia dalam mode terang, seperti situsnya."</string>
+    <string name="whats_new_paper_title">"Tema Kertas"</string>
+    <string name="whats_new_paper_body">"Tema baru langsung dari YORU: kertas hangat, tinta, bingkai tipis, sudut tegas, dan font situs itu sendiri. Hanya terang. Pilih di Tampilan."</string>
+    <string name="whats_new_paper_icon_title">"Ikon aplikasi Kertas"</string>
+    <string name="whats_new_paper_icon_body">"Ikon layar utama yang serasi: huruf A putih kertas di atas kotak merah mawar. Pilih di Ikon Aplikasi pada Tampilan."</string>
+</resources>

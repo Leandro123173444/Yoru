@@ -1,0 +1,122 @@
+package com.aurora.music.playback
+
+import com.aurora.music.localization.appString
+import com.aurora.music.R
+
+import android.content.Intent
+import android.os.Build
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.annotation.OptIn
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Alarm
+import com.aurora.music.ui.theme.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import com.aurora.music.ui.theme.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.common.util.UnstableApi
+import com.aurora.music.AuroraApplication
+import com.aurora.music.ui.theme.AuroraTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+
+class AlarmActivity : ComponentActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (Build.VERSION.SDK_INT >= 27) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                    android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
+            )
+        }
+        val container = (application as AuroraApplication).container
+        setContent {
+            val uiPrefs by container.uiPrefs.collectAsStateWithLifecycle()
+            AuroraTheme(uiPrefs = uiPrefs) {
+                AlarmDismissScreen(
+                    onDismiss = { dismiss(disableDaily = false) },
+                    onTurnOff = { dismiss(disableDaily = true) },
+                )
+            }
+        }
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun dismiss(disableDaily: Boolean) {
+        runCatching {
+            startService(Intent(this, PlaybackService::class.java).setAction(PlaybackService.ACTION_ALARM_DISMISS))
+        }
+        if (disableDaily) {
+            val store = (application as AuroraApplication).container.settingsStore
+            // detached scope so the write survives finish
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                val a = store.alarmPrefs.first()
+                store.setAlarm(enabled = false, hour = a.hour, minute = a.minute)
+            }
+        }
+        finish()
+    }
+}
+
+@Composable
+private fun AlarmDismissScreen(onDismiss: () -> Unit, onTurnOff: () -> Unit) {
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(
+            Modifier.fillMaxSize().padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Icon(Icons.Filled.Alarm, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(72.dp))
+            Spacer(Modifier.height(20.dp))
+            Text(appString(R.string.text_alarm_25f8c5), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                appString(R.string.text_time_to_wake_up_0b1ade),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(40.dp))
+            Button(
+                onClick = onDismiss,
+                shape = com.aurora.music.ui.theme.paperSquare(RoundedCornerShape(50)),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                modifier = Modifier.size(width = 220.dp, height = 56.dp),
+            ) {
+                Text(appString(R.string.text_dismiss_70afe9), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(10.dp))
+            TextButton(onClick = onTurnOff) {
+                Text(appString(R.string.text_turn_off_daily_alarm_6c0180), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}

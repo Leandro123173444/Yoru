@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guest_likes_title">"اپنی پسند %1$s میں شامل کریں؟"</string>
+    <string name="guest_likes_body">"آپ نے %2$s سے سائن آؤٹ رہتے ہوئے %1$s پسند کیے۔ جب تک آپ انہیں شامل نہیں کرتے، یہ اسی آلے پر محفوظ رہیں گے۔"</string>
+    <string name="guest_likes_add">"شامل کریں"</string>
+    <string name="guest_likes_later">"ابھی نہیں"</string>
+    <string name="guest_likes_added">"%1$s آپ کی %2$s پسند میں شامل کر دیے گئے"</string>
+    <string name="guest_likes_left">"%1$s شامل نہیں ہو سکے۔ YORU بعد میں دوبارہ پوچھے گا۔"</string>
+    <string name="guest_sign_in">"سائن ان کریں"</string>
+    <string name="guest_likes_held">"%2$s نے %1$s روک رکھے ہیں جب تک آپ انسان ہونے کی جانچ پاس نہیں کرتے۔ مکمل کرنے کے لیے ترتیبات ← اکاؤنٹس میں %2$s کی تصدیق کریں۔"</string>
+    <string name="guest_library_title">"اپنی پسند اور پلے لسٹس %1$s میں شامل کریں؟"</string>
+    <string name="guest_library_body">"سبسکرپشن کے بغیر محفوظ کیے گئے %1$s اس ڈیوائس پر رہیں گے جب تک آپ انہیں اپنے %2$s اکاؤنٹ میں شامل نہیں کرتے۔"</string>
+    <string name="guest_library_added">"آپ کی پسند اور پلے لسٹس %1$s میں شامل کر دی گئیں"</string>
+</resources>

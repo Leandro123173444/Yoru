@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="soundcloud_card_detail">"Your likes, playlists and feed"</string>
+    <string name="soundcloud_connect_title">"Connect SoundCloud"</string>
+    <string name="soundcloud_connect_subtitle">"Your likes, playlists and the artists you follow"</string>
+    <string name="soundcloud_sign_in">"Sign in to SoundCloud"</string>
+    <string name="soundcloud_sign_in_hint">"Sign in on SoundCloud\'s page. YORU connects as soon as you\'re in."</string>
+    <string name="soundcloud_waiting">"Sign in to continue. If Google sign-in is refused here, sign in with your email instead."</string>
+    <string name="soundcloud_details">"YORU uses SoundCloud\'s unofficial web interface and keeps your sign-in encrypted on this device."</string>
+    <string name="soundcloud_connect_failed">"Could not connect SoundCloud. Please try again."</string>
+    <string name="soundcloud_page_failed">"The sign-in page could not load. Check your connection and reload."</string>
+    <string name="soundcloud_captcha_hint">"SoundCloud wants to check you\'re human before saving this change. Solve it once and YORU finishes the change."</string>
+    <string name="player_comments">"Comments"</string>
+    <string name="player_soundcloud_comments">"SoundCloud Comments"</string>
+    <string name="comments_empty">"No comments yet. Be the first."</string>
+    <string name="comments_none">"No comments here yet"</string>
+    <string name="comment_hint_untimed">"Add a comment…"</string>
+    <string name="comment_like_failed">"Couldn\'t update the like. Try again."</string>
+    <string name="comment_hint">"Comment at %1$s"</string>
+    <string name="comment_post">"Post"</string>
+    <string name="comment_failed">"Couldn\'t post your comment. Try again."</string>
+    <string name="soundcloud_verify">"Verify SoundCloud"</string>
+    <string name="soundcloud_verify_detail">"Send the likes and follows that are waiting. SoundCloud may ask you to prove you\'re human first."</string>
+    <string name="soundcloud_verify_done">"SoundCloud is up to date."</string>
+    <string name="soundcloud_verify_failed">"SoundCloud still needs you to verify. Try again."</string>
+    <string name="soundcloud_verify_waiting">"Waiting: %1$d"</string>
+    <string name="comment_needs_verify">"SoundCloud wants to check you\'re human. Go to Settings → Accounts and choose Verify SoundCloud."</string>
+</resources>

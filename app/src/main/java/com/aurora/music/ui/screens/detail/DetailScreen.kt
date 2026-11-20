@@ -1,0 +1,730 @@
+package com.aurora.music.ui.screens.detail
+
+import com.aurora.music.localization.localizedMediaType
+import com.aurora.music.ui.theme.paperClip
+
+import com.aurora.music.localization.appString
+import com.aurora.music.R
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.DownloadDone
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Radio
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.outlined.PushPin
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.aurora.music.model.Song
+import com.aurora.music.ui.components.Artwork
+import com.aurora.music.ui.components.CoverKey
+import com.aurora.music.ui.components.Eyebrow
+import com.aurora.music.ui.components.SectionHeader
+import com.aurora.music.ui.components.SongRow
+import com.aurora.music.viewmodel.DetailUiState
+import kotlinx.coroutines.launch
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.aurora.music.model.accent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.ui.text.style.TextOverflow
+import com.aurora.music.ui.components.EmptyState
+import com.aurora.music.ui.components.LoadingState
+import com.aurora.music.ui.theme.Motion
+import com.aurora.music.ui.theme.likePop
+import com.aurora.music.ui.theme.pressClickable
+import com.aurora.music.util.MotionTokens
+import com.aurora.music.ui.components.glass.GlassAction
+import com.aurora.music.ui.components.glass.GlassIconButton
+import com.aurora.music.ui.theme.LocalGlassAmbient
+import com.aurora.music.ui.theme.glassCard
+import com.aurora.music.ui.theme.glassChip
+import com.aurora.music.ui.theme.isGlassTheme
+import com.aurora.music.ui.theme.liveGlassSupported
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun DetailScreen(
+    contentPadding: PaddingValues,
+    state: DetailUiState,
+    likedIds: Set<String>,
+    currentSongId: String,
+    isPlaying: Boolean,
+    onBack: () -> Unit,
+    onPlayAll: (List<Song>, Int) -> Unit,
+    onShufflePlay: (List<Song>) -> Unit,
+    onAddToQueue: (Song) -> Unit,
+    onPlayNext: (Song) -> Unit,
+    onToggleLike: (String) -> Unit,
+    onOpenDetail: (String, String) -> Unit,
+    itemKind: String,
+    isItemLiked: Boolean,
+    onToggleItemLike: () -> Unit,
+    canLikeItem: Boolean = true,
+    downloadedIds: Set<String>,
+    onDownload: (Song) -> Unit,
+    onRemoveDownload: (String) -> Unit,
+    onDownloadAll: () -> Unit,
+    onRemoveDownloads: () -> Unit,
+    onEditPlaylist: suspend (String, String) -> Boolean,
+    onDeletePlaylist: () -> Unit,
+    onLoadMore: () -> Unit = {},
+    // the tracks near the scroll position, for hearts liked on other accounts
+    onVisibleSongs: (List<Song>) -> Unit = {},
+    onMix: () -> Unit = {},
+    canDownload: Boolean = true,
+    isPinned: Boolean = false,
+    onTogglePin: () -> Unit = {},
+    onEditTags: ((Song) -> Unit)? = null,
+    serverTagEditing: Boolean = false,
+    artistInfo: com.aurora.music.data.remote.ArtistInfo? = null,
+    hiddenIds: Set<String> = emptySet(),
+    onToggleHidden: ((Song) -> Unit)? = null,
+    // "kind:id"; playlists and liked songs remember their sort under it
+    collectionKey: String? = null,
+) {
+    val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val glass = isGlassTheme()
+    val ambient = LocalGlassAmbient.current
+    val sortStore = (androidx.compose.ui.platform.LocalContext.current.applicationContext as com.aurora.music.AuroraApplication).container.settingsStore
+    val sorts by sortStore.trackSorts.collectAsStateWithLifecycle(initialValue = emptyMap())
+    val sortScope = androidx.compose.runtime.rememberCoroutineScope()
+    var headerMenu by remember { mutableStateOf(false) }
+    var showEdit by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    var searchOpen by remember { mutableStateOf(false) }
+    var genreFilter by remember(state.data?.info) { mutableStateOf<String?>(null) }
+    val searchFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+    val data = state.data
+
+    if (data == null) {
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            Row(Modifier.fillMaxWidth().padding(top = topInset + 6.dp, start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, appString(R.string.text_back_b52b36), modifier = Modifier.size(40.dp).paperClip(CircleShape).clickable(onClick = onBack).padding(8.dp))
+            }
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                if (state.loading) LoadingState()
+                else EmptyState(Icons.Filled.ErrorOutline, appString(R.string.text_couldn_t_load_8b7b6b))
+            }
+        }
+        return
+    }
+
+    val info = data.info
+    val isSongMix = info.typeLabel.equals("Playlist", true) || info.typeLabel.equals("Smart playlist", true) || info.typeLabel.equals("Liked", true) || itemKind == com.aurora.music.foryou.MIX_KIND
+    // play, shuffle and the list all follow the chosen sort
+    val sortKey = collectionKey?.takeIf { isSongMix }
+    val sortOrder = sortKey?.let { sorts[it] } ?: com.aurora.music.data.TrackSortOrder()
+    val tracks = remember(data.tracks, sortOrder) { sortOrder.apply(data.tracks) }
+    val hiddenSongs = com.aurora.music.ui.components.LocalHiddenSongs.current
+    // artists often lack a server image fall back to enriched wiki photo
+    val effectiveArt = info.artUrl.ifBlank { artistInfo?.imageUrl.orEmpty() }
+    val albumCover = if (itemKind == "album") CoverKey(info.title, info.subtitle, tracks.firstOrNull { it.path.isNotBlank() }?.path.orEmpty()) else null
+    val accentTarget by com.aurora.music.util.rememberDominantTarget(effectiveArt, info.accent)
+    val anchors = remember(data.tracks, itemKind, info.isArtist, info.title) {
+        if (itemKind == "album" || info.isArtist) com.aurora.music.ui.screens.player.sourcesAnchors(data.tracks, itemKind == "album", info.title) else emptyList()
+    }
+    // only the header and chips read the tween; the scheme and rows take the target once
+    val accent by androidx.compose.animation.animateColorAsState(accentTarget, Motion.state(MotionTokens.SLOW), label = "dominant")
+    val baseScheme = MaterialTheme.colorScheme
+    val accentInk = com.aurora.music.ui.theme.readableAccent(accentTarget, baseScheme.background.luminance() < 0.5f)
+    com.aurora.music.ui.theme.ProvideContextAccent(accentInk)
+    val albumScheme = remember(baseScheme, accentInk) {
+        baseScheme.copy(primary = accentInk, onPrimary = if (accentInk.luminance() > 0.5f) Color.Black else Color.White)
+    }
+    // the header accent animates on open so list derivations stay out of the per-frame path
+    val genres = remember(tracks, isSongMix) {
+        if (isSongMix) tracks.flatMap { com.aurora.music.data.GenreText.split(it.genre) }
+            .distinctBy { it.lowercase() }.sortedWith(String.CASE_INSENSITIVE_ORDER) else emptyList()
+    }
+    val shown = remember(tracks, genreFilter, query, searchOpen) {
+        val genreShown = genreFilter?.let { g -> tracks.filter { com.aurora.music.data.GenreText.matches(it.genre, g) } } ?: tracks
+        if (query.isBlank() || !searchOpen) genreShown
+        else genreShown.filter { it.title.contains(query, true) || it.artist.contains(query, true) }
+    }
+    val allDownloaded = remember(tracks, downloadedIds) { tracks.isNotEmpty() && tracks.all { downloadedIds.contains(it.id) } }
+    val albumShelves = remember(data.albums) { data.albums.partition { it.typeLabel == "EP" || it.typeLabel == "Single" } }
+    val collectionMeta = remember(tracks, info.songCount, info.followers, info.statsLine) {
+        if (info.statsLine) collectionMeta(tracks, info.songCount, info.followers) else ""
+    }
+
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    androidx.compose.runtime.LaunchedEffect(listState, state.canLoadMore) {
+        androidx.compose.runtime.snapshotFlow {
+            val li = listState.layoutInfo
+            (li.visibleItemsInfo.lastOrNull()?.index ?: 0) to li.totalItemsCount
+        }.collect { (last, count) ->
+            if (state.canLoadMore && count > 0 && last >= count - 6) onLoadMore()
+        }
+    }
+    // header rows only shift the index down, which the window's margin absorbs
+    androidx.compose.runtime.LaunchedEffect(listState, shown) {
+        androidx.compose.runtime.snapshotFlow { listState.firstVisibleItemIndex / com.aurora.music.data.LIKE_BUCKET }
+            .collect { onVisibleSongs(com.aurora.music.data.likeWindow(shown, it)) }
+    }
+
+    val actionsRow: @Composable (Modifier, Boolean) -> Unit = { rowModifier, wrap ->
+            FlowRow(
+                rowModifier,
+                horizontalArrangement = if (wrap) Arrangement.spacedBy(4.dp) else Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                // two groups, so a narrow or large-type screen wraps the secondary actions together instead of orphaning one
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                val onAccent = if (accent.luminance() > 0.6f) Color.Black else Color.White
+                if (glass) {
+                    GlassAction(Icons.Filled.PlayArrow, appString(R.string.text_play_5d12bd), onClick = { onPlayAll(tracks, 0) },
+                        accent = accent, enabled = tracks.isNotEmpty())
+                    Spacer(Modifier.width(10.dp))
+                    GlassIconButton(Icons.Filled.Shuffle, appString(R.string.text_shuffle_5b772b), onClick = { onShufflePlay(tracks) },
+                        modifier = Modifier.size(44.dp), enabled = tracks.isNotEmpty())
+                } else {
+                Row(
+                    Modifier
+                        .paperClip(RoundedCornerShape(50))
+                        .pressClickable(enabled = tracks.isNotEmpty()) { onPlayAll(tracks, 0) }
+                        .background(Brush.horizontalGradient(listOf(accent, accent.copy(alpha = 0.78f))))
+                        .padding(horizontal = 24.dp, vertical = 13.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.PlayArrow, null, tint = onAccent, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(appString(R.string.text_play_5d12bd), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Black, color = onAccent)
+                }
+                Spacer(Modifier.width(6.dp))
+                Icon(
+                    Icons.Filled.Shuffle, appString(R.string.text_shuffle_5b772b),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(48.dp).paperClip(CircleShape).clickable(enabled = tracks.isNotEmpty()) { onShufflePlay(tracks) }.padding(12.dp),
+                )
+                }
+                com.aurora.music.ui.theme.TextButton(onClick = onMix, enabled = tracks.isNotEmpty()) {
+                    Icon(Icons.Filled.GraphicEq, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(4.dp)); Text(appString(R.string.text_mix_fd7391), maxLines = 1)
+                }
+                }
+                val likeable = canLikeItem && (itemKind == "album" || itemKind == "playlist" || itemKind == "artist" || itemKind == com.aurora.music.foryou.MIX_KIND)
+                Row(if (glass && (sortKey != null || likeable || canDownload)) Modifier.glassChip() else Modifier, verticalAlignment = Alignment.CenterVertically) {
+                if (sortKey != null) com.aurora.music.ui.components.TrackSortButton(sortOrder, accent, enabled = tracks.size > 1) { choice ->
+                    sortScope.launch { sortStore.setTrackSort(sortKey, sortOrder.pick(choice)) }
+                }
+                if (likeable) {
+                    val likeTint by animateColorAsState(if (isItemLiked) accent else MaterialTheme.colorScheme.onSurface, Motion.state(), label = "like")
+                    Icon(
+                        if (isItemLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        if (isItemLiked) appString(R.string.text_unlike_e4fc40) else appString(R.string.text_like_c7e02c),
+                        tint = likeTint,
+                        modifier = Modifier.size(48.dp).paperClip(CircleShape).clickable { onToggleItemLike() }.padding(12.dp)
+                            .likePop(isItemLiked, collectionKey ?: info.title),
+                    )
+                }
+                if (canDownload) {
+                    val downloadTint by animateColorAsState(if (allDownloaded) accent else MaterialTheme.colorScheme.onSurfaceVariant, Motion.state(), label = "download")
+                    Icon(
+                        if (allDownloaded) Icons.Filled.DownloadDone else Icons.Filled.Download,
+                        if (allDownloaded) appString(R.string.text_remove_downloads_cbe8be) else appString(R.string.text_download_a479c9),
+                        tint = downloadTint,
+                        modifier = Modifier.size(48.dp).paperClip(CircleShape).clickable {
+                            if (allDownloaded) onRemoveDownloads() else onDownloadAll()
+                        }.padding(12.dp),
+                    )
+                }
+                }
+            }
+    }
+    val menuButton: @Composable (Color, Backdrop?) -> Unit = { tint, backdrop ->
+                    Box {
+                        if (glass) GlassIconButton(Icons.Filled.MoreVert, appString(R.string.text_more_4bab2d), onClick = { headerMenu = true }, backdrop = backdrop)
+                        else Icon(Icons.Filled.MoreVert, appString(R.string.text_more_4bab2d), tint = tint, modifier = Modifier.size(48.dp).paperClip(CircleShape).clickable { headerMenu = true }.padding(12.dp))
+                        val isPlaylist = info.typeLabel.equals("Playlist", true)
+                        DropdownMenu(expanded = headerMenu, onDismissRequest = { headerMenu = false }) {
+                            DropdownMenuItem(text = { Text(appString(R.string.text_play_5d12bd)) }, enabled = tracks.isNotEmpty(), onClick = { headerMenu = false; onPlayAll(tracks, 0) }, leadingIcon = { Icon(Icons.Filled.PlayArrow, null) })
+                            DropdownMenuItem(text = { Text(appString(R.string.text_shuffle_5b772b)) }, enabled = tracks.isNotEmpty(), onClick = { headerMenu = false; onShufflePlay(tracks) }, leadingIcon = { Icon(Icons.Filled.Shuffle, null) })
+                            DropdownMenuItem(text = { Text(appString(R.string.text_add_all_to_queue_6cb104)) }, enabled = tracks.isNotEmpty(), onClick = { headerMenu = false; hiddenSongs.visible(tracks).forEach { onAddToQueue(it) } }, leadingIcon = { Icon(Icons.AutoMirrored.Filled.QueueMusic, null) })
+                            com.aurora.music.ui.components.LocalStartRadio.current?.let { startRadio ->
+                                DropdownMenuItem(text = { Text(appString(R.string.discovery_start_radio)) }, enabled = tracks.isNotEmpty(),
+                                    onClick = { headerMenu = false; startRadio(tracks.first()) }, leadingIcon = { Icon(Icons.Filled.Radio, null) })
+                            }
+                            if (info.isArtist) com.aurora.music.ui.components.LocalBlockArtist.current?.let { block ->
+                                val blocked = hiddenSongs.isBlocked(info.title)
+                                DropdownMenuItem(text = { Text(appString(if (blocked) R.string.unblock_artist else R.string.block_artist)) },
+                                    onClick = { headerMenu = false; block(info.title, !blocked) }, leadingIcon = { Icon(Icons.Filled.Block, null) })
+                            }
+                            // a generated mix lives on home only
+                            if (itemKind != com.aurora.music.foryou.MIX_KIND) DropdownMenuItem(
+                                text = { Text(if (isPinned) appString(R.string.text_unpin_from_library_5b3f2e) else appString(R.string.text_pin_to_library_7b01e2)) },
+                                onClick = { headerMenu = false; onTogglePin() },
+                                leadingIcon = { Icon(if (isPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin, null) },
+                            )
+                            if (isPlaylist && info.editable) {
+                                DropdownMenuItem(text = { Text(appString(R.string.text_edit_playlist_1528d5)) }, onClick = { headerMenu = false; showEdit = true }, leadingIcon = { Icon(Icons.Filled.Edit, null) })
+                                DropdownMenuItem(text = { Text(appString(R.string.text_delete_playlist_b55b18)) }, onClick = { headerMenu = false; onDeletePlaylist() }, leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) })
+                            }
+                        }
+                    }
+    }
+    val tablet = com.aurora.music.ui.layout.LocalWindowLayout.current.useNavigationRail
+
+    MaterialTheme(colorScheme = albumScheme) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    val compactHeader = tablet && maxWidth >= 480.dp
+    val headerArt = if (maxWidth >= 800.dp) 220.dp else 176.dp
+    val gutter = if (tablet) 24.dp else 20.dp
+    LazyColumn(
+        Modifier.fillMaxWidth(),
+        state = listState,
+        contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding() + 24.dp),
+    ) {
+        if (compactHeader) item {
+            Column(
+                Modifier.fillMaxWidth()
+                    .background(Brush.verticalGradient(listOf(accent.copy(alpha = .22f), MaterialTheme.colorScheme.background)))
+                    .padding(top = topInset + 4.dp, bottom = 8.dp),
+            ) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, appString(R.string.text_back_b52b36), tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(48.dp).paperClip(CircleShape).clickable(onClick = onBack).padding(12.dp))
+                    Spacer(Modifier.weight(1f))
+                    menuButton(MaterialTheme.colorScheme.onSurface, ambient)
+                }
+                Row(Modifier.fillMaxWidth().padding(horizontal = gutter, vertical = 8.dp), verticalAlignment = Alignment.Bottom) {
+                    val art = headerArt
+                    Artwork(effectiveArt, info.accent, Modifier.size(art), corner = if (info.isArtist) art / 2 else 20.dp, animated = albumCover)
+                    Spacer(Modifier.width(24.dp))
+                    Column(Modifier.weight(1f)) {
+                        Eyebrow(info.typeLabel.localizedMediaType().uppercase(java.util.Locale.getDefault()), accent)
+                        Spacer(Modifier.height(6.dp))
+                        com.aurora.music.ui.screens.player.SourcesTitle(anchors, !info.isArtist) {
+                            Text(info.title, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = it)
+                        }
+                        if (info.description.isNotBlank()) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(info.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(info.subtitle, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        if (collectionMeta.isNotBlank()) Text(collectionMeta, style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.height(16.dp))
+                        actionsRow(Modifier.fillMaxWidth(), true)
+                    }
+                }
+            }
+        }
+        if (!compactHeader) item {
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val wideHeader = maxWidth >= 700.dp
+                val headerForeground = if (wideHeader) MaterialTheme.colorScheme.onSurface else Color.White
+                // the art fades into the page, so light pages need dark type under the title
+                val lightPage = MaterialTheme.colorScheme.background.luminance() > 0.5f
+                val titleForeground = if (lightPage) MaterialTheme.colorScheme.onSurface else headerForeground
+                val cover = if (glass && liveGlassSupported && !wideHeader) rememberLayerBackdrop() else null
+            Box(Modifier.fillMaxWidth().height(if (wideHeader) 360.dp else 420.dp)) {
+                if (wideHeader) {
+                    Box(Modifier.matchParentSize().background(Brush.verticalGradient(
+                        listOf(accent.copy(alpha = .22f), MaterialTheme.colorScheme.background))))
+                    Artwork(effectiveArt, info.accent,
+                        Modifier.align(Alignment.CenterStart).padding(start = 24.dp, top = 48.dp).size(260.dp),
+                        corner = if (info.isArtist) 130.dp else 20.dp, animated = albumCover)
+                } else {
+                Artwork(effectiveArt, info.accent, Modifier.matchParentSize().then(if (cover != null) Modifier.layerBackdrop(cover) else Modifier),
+                    corner = 0.dp, animated = albumCover)
+                Box(
+                    Modifier.matchParentSize().background(
+                        Brush.verticalGradient(
+                            colorStops = arrayOf(
+                                0f to Color.Transparent,
+                                0.42f to MaterialTheme.colorScheme.background.copy(alpha = 0.10f),
+                                0.74f to MaterialTheme.colorScheme.background.copy(alpha = 0.72f),
+                                1f to MaterialTheme.colorScheme.background,
+                            )
+                        )
+                    )
+                )
+                Box(
+                    Modifier.fillMaxWidth().height(130.dp).background(
+                        Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.45f), Color.Transparent))
+                    )
+                )
+                }
+                Row(
+                    Modifier.fillMaxWidth().padding(top = topInset + 6.dp).padding(horizontal = if (glass) 16.dp else 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val bent = if (wideHeader) ambient else cover
+                    if (glass) GlassIconButton(Icons.AutoMirrored.Filled.ArrowBack, appString(R.string.text_back_b52b36), onBack, backdrop = bent)
+                    else Icon(Icons.AutoMirrored.Filled.ArrowBack, appString(R.string.text_back_b52b36), tint = headerForeground, modifier = Modifier.size(40.dp).paperClip(CircleShape).clickable(onClick = onBack).padding(8.dp))
+                    Spacer(Modifier.weight(1f))
+                    menuButton(headerForeground, bent)
+                }
+                Column(Modifier.align(if (wideHeader) Alignment.CenterStart else Alignment.BottomStart)
+                    .padding(start = if (wideHeader) 320.dp else 20.dp, end = 20.dp,
+                        top = if (wideHeader) 48.dp else 0.dp, bottom = 14.dp)) {
+                    Eyebrow(info.typeLabel.localizedMediaType().uppercase(java.util.Locale.getDefault()), if (lightPage) MaterialTheme.colorScheme.primary else accent)
+                    Spacer(Modifier.height(6.dp))
+                    com.aurora.music.ui.screens.player.SourcesTitle(anchors, !info.isArtist) {
+                        Text(info.title, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Black, color = titleForeground,
+                            maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = it)
+                    }
+                    if (info.description.isNotBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(info.description, style = MaterialTheme.typography.bodyMedium, color = titleForeground.copy(alpha = 0.75f),
+                            maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(info.subtitle, style = MaterialTheme.typography.bodyMedium, color = titleForeground.copy(alpha = 0.85f),
+                        maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    if (collectionMeta.isNotBlank()) Text(collectionMeta, style = MaterialTheme.typography.bodySmall,
+                        color = titleForeground.copy(alpha = 0.75f))
+                }
+            }
+            }
+        }
+
+        if (!compactHeader) item {
+            actionsRow(Modifier.fillMaxWidth().padding(start = 20.dp, end = if (glass) 20.dp else 8.dp, top = 8.dp, bottom = 8.dp), false)
+        }
+
+        if (info.isArtist && artistInfo != null &&
+            (artistInfo.bio.isNotBlank() || artistInfo.tags.isNotEmpty() ||
+                artistInfo.country.isNotBlank() || artistInfo.yearsActive.isNotBlank())
+        ) {
+            item { ArtistAbout(artistInfo, accent) }
+        }
+
+        if (info.isArtist && data.albums.isNotEmpty()) {
+            // eps and singles get their own shelf so they stop masquerading as albums
+            val (short, full) = albumShelves
+            if (full.isNotEmpty()) {
+                item {
+                    SectionHeader(appString(R.string.text_albums_4c45e7), Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+                    Spacer(Modifier.height(6.dp))
+                    androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 8.dp)) {
+                        items(full.size) { i ->
+                            com.aurora.music.ui.components.AlbumCard(full[i], onClick = { onOpenDetail("album", full[i].id) })
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+            if (short.isNotEmpty()) {
+                item {
+                    SectionHeader(appString(R.string.text_eps_singles_f6feb2), Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+                    Spacer(Modifier.height(6.dp))
+                    androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 8.dp)) {
+                        items(short.size) { i ->
+                            com.aurora.music.ui.components.AlbumCard(short[i], onClick = { onOpenDetail("album", short[i].id) })
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+        }
+
+        item {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 20.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SectionHeader(
+                    if (info.isArtist) appString(R.string.text_popular_9bc2c5) else appString(R.string.text_tracks_3dd1a4),
+                    Modifier.weight(1f),
+                )
+                if (tracks.size > 5) {
+                    Icon(
+                        if (searchOpen) Icons.Filled.Close else Icons.Filled.Search,
+                        if (searchOpen) appString(R.string.text_close_search_0906f9) else appString(R.string.text_search_tracks_8bc43d),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(40.dp).paperClip(CircleShape)
+                            .clickable { searchOpen = !searchOpen; if (!searchOpen) query = "" }.padding(8.dp),
+                    )
+                }
+            }
+        }
+
+        if (tracks.size > 5) {
+            item {
+                androidx.compose.runtime.LaunchedEffect(searchOpen) {
+                    if (searchOpen) runCatching { searchFocus.requestFocus() }
+                }
+                androidx.compose.animation.AnimatedVisibility(visible = searchOpen) {
+                    TextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+                            .then(if (glass) Modifier.glassCard(RoundedCornerShape(14.dp)) else Modifier).focusRequester(searchFocus),
+                        placeholder = { Text(appString(R.string.search_collection)) },
+                        leadingIcon = { Icon(Icons.Filled.Search, null, tint = MaterialTheme.colorScheme.primary) },
+                        trailingIcon = { if (query.isNotEmpty()) Icon(Icons.Filled.Close, appString(R.string.text_clear_719ea3), modifier = Modifier.size(40.dp).paperClip(CircleShape).clickable { query = "" }.padding(8.dp)) },
+                        singleLine = true,
+                        shape = com.aurora.music.ui.theme.paperSquare(RoundedCornerShape(14.dp)),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = if (glass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
+                            unfocusedContainerColor = if (glass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            cursorColor = MaterialTheme.colorScheme.primary,
+                        ),
+                    )
+                }
+            }
+        }
+
+        // playlists mix genres so offer chips for the ones actually present
+        if (genres.size > 1) {
+            item {
+                androidx.compose.foundation.lazy.LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                ) {
+                    items(genres.size + 1) { i ->
+                        val label = if (i == 0) appString(R.string.text_all_6a7208) else genres[i - 1]
+                        val selected = if (i == 0) genreFilter == null else genreFilter.equals(label, true)
+                        val chipInk by animateColorAsState(if (selected) accent else MaterialTheme.colorScheme.onSurface, Motion.state(), label = "genreInk")
+                        val chipFill by animateColorAsState(if (selected) accent.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainerHigh, Motion.state(), label = "genreFill")
+                        val chipLine by animateColorAsState(accent.copy(alpha = if (selected) 0.6f else 0f), Motion.state(), label = "genreLine")
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (selected) FontWeight.Black else FontWeight.Medium,
+                            color = chipInk,
+                            modifier = Modifier
+                                .then(if (glass) Modifier.glassCard(CircleShape, if (selected) accent else Color.Unspecified)
+                                    else Modifier.paperClip(RoundedCornerShape(50)).background(chipFill)
+                                        .border(1.dp, chipLine, com.aurora.music.ui.theme.paperSquare(RoundedCornerShape(50))))
+                                .clickable { genreFilter = if (i == 0) null else label }
+                                .padding(horizontal = 14.dp, vertical = 7.dp),
+                        )
+                    }
+                }
+            }
+        }
+
+        items(shown.size, contentType = { "song" }) { i ->
+            val s = shown[i]
+            SongRow(
+                song = s,
+                isPlaying = s.id == currentSongId && isPlaying,
+                isLiked = likedIds.contains(s.id),
+                onClick = { onPlayAll(shown, i) },
+                onToggleLike = { onToggleLike(s.id) },
+                modifier = Modifier.padding(horizontal = 8.dp),
+                onAddToQueue = { onAddToQueue(s) },
+                onPlayNext = { onPlayNext(s) },
+                onGoToAlbum = if (!info.isArtist && s.albumId.isNotBlank()) ({ onOpenDetail("album", s.albumId) }) else null,
+                onGoToArtist = if (s.artistId.isNotBlank()) ({ onOpenDetail("artist", s.artistId) }) else null,
+                isDownloaded = canDownload && downloadedIds.contains(s.id),
+                onDownload = if (canDownload) ({ onDownload(s) }) else null,
+                onRemoveDownload = if (canDownload) ({ onRemoveDownload(s.id) }) else null,
+                onEditTags = onEditTags?.let { cb -> { cb(s) } },
+                serverTagEditing = serverTagEditing,
+                showAlbum = itemKind != "album",
+                hidden = com.aurora.music.data.stripMergeNamespace(s.id) in hiddenIds,
+                onToggleHidden = onToggleHidden?.let { cb -> { cb(s) } },
+            )
+        }
+
+        if (shown.isEmpty() && !state.loadingMore && !state.canLoadMore) {
+            item {
+                if (tracks.isEmpty()) EmptyState(Icons.Filled.MusicNote, appString(R.string.text_no_songs_e6bbe2))
+                else EmptyState(Icons.Filled.Search, appString(R.string.text_no_results_b993b0))
+            }
+        }
+
+        if (state.loadingMore) {
+            item {
+                Box(Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                    com.aurora.music.ui.components.LottieLoader(modifier = Modifier.size(40.dp))
+                }
+            }
+        }
+    }
+    }
+    }
+
+    if (showEdit) {
+        EditPlaylistDialog(
+            initialName = info.title,
+            initialDesc = info.editableDescription.orEmpty(),
+            onSave = onEditPlaylist,
+            onDismiss = { showEdit = false },
+        )
+    }
+}
+
+// tracks, total length and saves; the length is estimated from the loaded tracks until all of them are in
+private fun collectionMeta(tracks: List<Song>, total: Int, followers: Long): String {
+    val count = maxOf(total, tracks.size)
+    val parts = ArrayList<String>()
+    if (count > 0) parts += com.aurora.music.localization.appPlural(R.plurals.track_count, count)
+    val loaded = tracks.sumOf { it.durationSec.toLong() }
+    if (loaded > 0) {
+        val exact = tracks.size >= count
+        val length = longDuration(if (exact) loaded else loaded * count / tracks.size)
+        parts += if (exact) length else appString(R.string.detail_duration_about, length)
+    }
+    if (followers > 0) {
+        val resources = com.aurora.music.localization.AppStrings.context.resources
+        val number = java.text.NumberFormat.getIntegerInstance(resources.configuration.locales[0]).format(followers)
+        parts += resources.getQuantityString(R.plurals.save_count, followers.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), number)
+    }
+    return parts.joinToString(" · ")
+}
+
+private fun longDuration(seconds: Long): String {
+    val minutes = maxOf(1L, (seconds + 30) / 60)
+    return if (minutes >= 60) appString(R.string.detail_duration_hours, (minutes / 60).toInt(), (minutes % 60).toInt())
+    else appString(R.string.detail_duration_minutes, minutes.toInt())
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ArtistAbout(info: com.aurora.music.data.remote.ArtistInfo, accent: Color) {
+    var expanded by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
+        SectionHeader(appString(R.string.text_about_6b21fb))
+        Spacer(Modifier.height(10.dp))
+        val meta = listOf(info.country, info.yearsActive).filter { it.isNotBlank() }.joinToString("  •  ")
+        if (meta.isNotBlank()) {
+            Text(meta, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = accent)
+            Spacer(Modifier.height(8.dp))
+        }
+        if (info.bio.isNotBlank()) {
+            Text(
+                info.bio,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = if (expanded) Int.MAX_VALUE else 5,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.animateContentSize(Motion.state(MotionTokens.STANDARD)).clickable { expanded = !expanded },
+            )
+            Text(
+                if (expanded) appString(R.string.text_show_less_4c852b) else appString(R.string.text_show_more_25911d),
+                style = MaterialTheme.typography.labelLarge,
+                color = accent,
+                modifier = Modifier.paperClip(RoundedCornerShape(50)).clickable { expanded = !expanded }.padding(vertical = 4.dp),
+            )
+        }
+        if (info.tags.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                info.tags.forEach { tag ->
+                    Text(
+                        tag,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.paperClip(RoundedCornerShape(50))
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EditPlaylistDialog(initialName: String, initialDesc: String, onSave: suspend (String, String) -> Boolean, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf(initialName) }
+    var desc by remember { mutableStateOf(initialDesc) }
+    var saving by remember { mutableStateOf(false) }
+    var failed by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = { if (!saving) onDismiss() },
+        title = { Text(appString(R.string.text_edit_playlist_1528d5), fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                androidx.compose.material3.OutlinedTextField(value = name, onValueChange = { name = it; failed = false }, label = { Text(appString(R.string.text_name_709a23)) }, singleLine = true, enabled = !saving)
+                Spacer(Modifier.height(10.dp))
+                androidx.compose.material3.OutlinedTextField(value = desc, onValueChange = { desc = it; failed = false }, label = { Text(appString(R.string.text_description_55f8eb)) }, enabled = !saving)
+                AnimatedVisibility(failed) {
+                    Text(appString(R.string.playlist_update_failed), color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+                }
+            }
+        },
+        confirmButton = {
+            com.aurora.music.ui.theme.TextButton(onClick = {
+                saving = true
+                failed = false
+                scope.launch {
+                    try {
+                        if (onSave(name.trim(), desc.trim())) onDismiss() else failed = true
+                    } finally {
+                        saving = false
+                    }
+                }
+            }, enabled = name.isNotBlank() && !saving) {
+                Text(appString(if (saving) R.string.playlist_saving else R.string.text_save_efc007))
+            }
+        },
+        dismissButton = { com.aurora.music.ui.theme.TextButton(onClick = onDismiss, enabled = !saving) { Text(appString(R.string.text_cancel_77dfd2)) } },
+    )
+}

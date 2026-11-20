@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_section">"Contrôler un autre appareil"</string>
+    <string name="connect_this_device">"Cet appareil"</string>
+    <string name="connect_pair_title">"Associer à %1$s"</string>
+    <string name="connect_enter_code">"Saisissez le code affiché sur %1$s."</string>
+    <string name="connect_add_by_address">"Ajouter par adresse"</string>
+    <string name="connect_address_help">"Pour Tailscale ou un autre réseau, saisissez l'IP ou le nom de l'appareil, par ex. 100.101.102.103."</string>
+    <string name="connect_device_key">"Clé de l'appareil %1$s"</string>
+    <string name="connect_device_key_help">"Vérifiez que l'autre appareil affiche la même clé, puis saisissez son code."</string>
+    <string name="connect_already_paired">"Déjà associé. La nouvelle adresse a été enregistrée."</string>
+    <string name="connect_switch_title">"Lors du changement d'appareil"</string>
+    <string name="connect_switch_keep">"Continuer sur les deux"</string>
+    <string name="connect_switch_pause">"Mettre en pause ici"</string>
+    <string name="connect_switch_move">"Transférer la lecture"</string>
+    <string name="connect_output">"Sortie"</string>
+    <string name="connect_preset">"Préréglage"</string>
+    <string name="connect_sources_note">"Les titres sont lus depuis les sources de cet appareil."</string>
+    <string name="connect_reachable_at">"Accessible à"</string>
+    <string name="connect_none_found">"Aucun autre appareil YORU trouvé. Activez-y le contrôle à distance, puis relancez la recherche."</string>
+    <string name="connect_settings_title">"YORU Connect"</string>
+    <string name="connect_settings_summary">"Contrôlez d'autres appareils YORU ou laissez-les contrôler celui-ci"</string>
+    <string name="connect_continue">"Continuer"</string>
+    <string name="connect_this_key">"Clé de cet appareil : %1$s"</string>
+    <string name="connect_settings_link">"Code d'association, adresses et appareils"</string>
+    <string name="connect_devices">"Appareils"</string>
+    <string name="connect_guide_title">"Comment se connecter"</string>
+    <string name="connect_guide_host">"Sur l'appareil qui doit lire la musique, activez Autoriser le contrôle à distance puis touchez Afficher le code d'association."</string>
+    <string name="connect_guide_pick">"Sur l'appareil qui sert de télécommande, ouvrez Lire sur dans le lecteur, choisissez cet appareil et saisissez le code. L'association ne se fait qu'une fois."</string>
+    <string name="connect_guide_network">"Gardez les deux sur le même Wi-Fi. Sur un autre réseau, comme Tailscale, utilisez Ajouter par adresse."</string>
+    <string name="connect_guide_sources">"La musique vient des propres sources de cet appareil : connectez-vous-y au même service. YouTube Music et SoundCloud fonctionnent aussi en invité."</string>
+    <string name="connect_host_on">"Activé. Les appareils associés peuvent trouver et contrôler celui-ci."</string>
+    <string name="connect_host_off">"Désactivé. Activez-le pour qu'un autre appareil lise de la musique ici."</string>
+    <string name="connect_idle_connecting">"Connexion…"</string>
+    <string name="connect_idle_empty">"Rien n'est en lecture là-bas. Choisissez un titre pour le lancer."</string>
+    <string name="connect_error_unavailable">"%1$s ne peut pas lire ces titres. Connectez-vous-y au même service de musique."</string>
+    <string name="connect_error_disabled">"Le contrôle à distance est désactivé sur %1$s. Activez-le là-bas."</string>
+    <string name="connect_error_unpaired">"%1$s n'accepte plus cet appareil. Associez-les à nouveau."</string>
+    <string name="connect_error_unreachable">"Impossible de joindre %1$s. Vérifiez que les deux sont sur le même réseau et qu'YORU y est ouvert."</string>
+    <string name="connect_error_lost">"Connexion à %1$s perdue."</string>
+</resources>

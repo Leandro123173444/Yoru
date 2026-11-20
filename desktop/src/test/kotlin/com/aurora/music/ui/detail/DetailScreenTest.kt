@@ -1,0 +1,94 @@
+package com.aurora.music.ui.detail
+
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import com.aurora.music.data.DetailData
+import com.aurora.music.data.remote.ArtistInfo
+import com.aurora.music.model.accent
+import com.aurora.music.ui.library.Harness
+import com.aurora.music.ui.library.Samples
+import com.aurora.music.ui.library.pixels
+import com.aurora.music.ui.library.save
+import com.aurora.music.ui.screens.detail.DetailScreen
+import com.aurora.music.ui.testing.distinctColors
+import com.aurora.music.ui.testing.region
+import com.aurora.music.ui.theme.readableAccent
+import com.aurora.music.viewmodel.DetailUiState
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class DetailScreenTest {
+    private val label = "browse-b"
+
+    @Composable
+    private fun Detail(state: DetailUiState, kind: String, artistInfo: ArtistInfo? = null, onOpen: (String, String) -> Unit = { _, _ -> }) = DetailScreen(
+        contentPadding = PaddingValues(bottom = 96.dp), state = state, likedIds = setOf("s1", "s3"), currentSongId = "s2", isPlaying = true,
+        onBack = {}, onPlayAll = { _, _ -> }, onShufflePlay = {}, onAddToQueue = {}, onPlayNext = {}, onToggleLike = {}, onOpenDetail = onOpen,
+        itemKind = kind, isItemLiked = kind == "album", onToggleItemLike = {}, downloadedIds = setOf("s0"), onDownload = {}, onRemoveDownload = {},
+        onDownloadAll = {}, onRemoveDownloads = {}, onEditPlaylist = { _, _ -> true }, onDeletePlaylist = {}, isPinned = true, artistInfo = artistInfo,
+    )
+
+    private fun shot(name: String, width: Int = 1180, height: Int = 860, content: @Composable () -> Unit) =
+        Harness(width, height) { content() }.use { it.settle(1200).save(label, name) }
+
+    @Test fun albumPaintsItsArtwork() {
+        val image = shot("detail-album") { Detail(DetailUiState(loading = false, data = Samples.albumDetail), "album") }
+        assertTrue(image.distinctColors(6) > 200)
+    }
+
+    @Test fun blankArtworkFallsBackToInfoAccent() {
+        val data = DetailData(Samples.albumDetail.info.copy(artUrl = ""), Samples.albumDetail.tracks)
+        val image = shot("detail-album-noart") { Detail(DetailUiState(loading = false, data = data), "album") }
+        val expected = readableAccent(data.info.accent, darkBackground = true)
+        fun near(c: Color) = kotlin.math.abs(c.red - expected.red) + kotlin.math.abs(c.green - expected.green) + kotlin.math.abs(c.blue - expected.blue) < 0.03f
+        assertTrue(image.pixels().count { near(Color(it)) } > 400)
+    }
+
+    @Test fun artistShowsAboutAndReleaseShelves() {
+        val plain = shot("detail-artist-plain") { Detail(DetailUiState(loading = false, data = Samples.artistDetail), "artist") }
+        val enriched = shot("detail-artist") { Detail(DetailUiState(loading = false, data = Samples.artistDetail, artistInfo = Samples.artistInfo), "artist", Samples.artistInfo) }
+        assertFalse(plain.pixels().contentEquals(enriched.pixels()))
+    }
+
+    @Test fun playlistOffersGenreChips() {
+        val image = shot("detail-playlist") { Detail(DetailUiState(loading = false, data = Samples.playlistDetail), "playlist") }
+        assertTrue(image.distinctColors(6) > 200)
+    }
+
+    @Test fun narrowPaneUsesFullBleedHeader() {
+        val narrow = shot("detail-narrow", width = 460) { Detail(DetailUiState(loading = false, data = Samples.albumDetail), "album") }
+        val wide = shot("detail-album-wide") { Detail(DetailUiState(loading = false, data = Samples.albumDetail), "album") }
+        fun artAt(px: IntArray, w: Int, x: Int, y: Int) = Color(px[y * w + x]).let { it.red - it.green > 0.25f }
+        assertTrue(artAt(narrow.pixels(), 460, 400, 200))
+        assertFalse(artAt(wide.pixels(), 1180, 400, 200))
+    }
+
+    @Test fun albumArtistLinkOpensArtist() {
+        val opened = mutableListOf<Pair<String, String>>()
+        Harness(1180, 860) { Detail(DetailUiState(loading = false, data = Samples.albumDetail), "album", onOpen = { k, i -> opened += k to i }) }.use { h ->
+            h.settle(1200).save(label, "detail-album-meta")
+            h.click(290f, 191f)
+            h.settle(200)
+        }
+        assertEquals(listOf("artist" to "ar0"), opened)
+    }
+
+    @Test fun artistSeeAllRevealsEveryPopularTrack() {
+        Harness(1180, 860) { Detail(DetailUiState(loading = false, data = Samples.artistDetail), "artist") }.use { h ->
+            val preview = h.settle(1200).save(label, "detail-artist-popular")
+            h.click(1110f, 332f)
+            val expanded = h.settle(600).save(label, "detail-artist-popular-all")
+            assertFalse(preview.region(24, 650, 600, 720).contentEquals(expanded.region(24, 650, 600, 720)))
+        }
+    }
+
+    @Test fun loadingAndFailedStates() {
+        val loading = shot("detail-loading") { Detail(DetailUiState(loading = true), "album") }
+        val failed = shot("detail-failed") { Detail(DetailUiState(loading = false), "album") }
+        assertFalse(loading.pixels().contentEquals(failed.pixels()))
+    }
+}

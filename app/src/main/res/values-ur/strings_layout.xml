@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="layout_classic">"کلاسک"</string>
+    <string name="layout_spotlight">"اسپاٹ لائٹ"</string>
+    <string name="layout_console">"کنسول"</string>
+    <string name="layout_drift">"ڈرفٹ"</string>
+    <string name="layout_hint">"ہوم اور لائبریری کی ترتیب۔ کلاسک اصل لے آؤٹ ہے۔"</string>
+    <string name="bars_title">"بارز"</string>
+    <string name="bars_hint">"منی پلیئر اور نیویگیشن بار۔ کلاسک اصل ہے۔"</string>
+    <string name="bars_match_title">"لے آؤٹ کے مطابق"</string>
+    <string name="bars_match_hint">"بارز اوپر منتخب کردہ لے آؤٹ کی پیروی کرتی ہیں۔"</string>
+    <string name="search_top_result">"بہترین نتیجہ"</string>
+    <string name="search_own_title">"تلاش کے لیے الگ لے آؤٹ"</string>
+    <string name="search_own_hint">"تلاش ہوم اور لائبریری کی پیروی کے بجائے اپنا لے آؤٹ استعمال کرتی ہے۔"</string>
+</resources>

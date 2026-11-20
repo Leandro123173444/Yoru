@@ -1,0 +1,324 @@
+package com.aurora.music.desktop
+
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
+import coil3.SingletonImageLoader
+import com.aurora.music.desktop.audio.DesktopPlaybackEngine
+import com.aurora.music.desktop.linux.LinuxDesktop
+import com.aurora.music.desktop.platform.BuildInfo
+import com.aurora.music.desktop.platform.CaptionFrame
+import com.aurora.music.desktop.platform.DesktopPaths
+import com.aurora.music.desktop.platform.DesktopRuntime
+import com.aurora.music.desktop.platform.HostPlatform
+import com.aurora.music.desktop.platform.SystemAccent
+import com.aurora.music.desktop.platform.WindowBackdrop
+import com.aurora.music.desktop.player.DesktopPlayer
+import com.aurora.music.desktop.player.playerDependencies
+import com.aurora.music.desktop.resources.AuroraLogo
+import com.aurora.music.desktop.ui.AppTray
+import com.aurora.music.desktop.ui.AuroraRoot
+import com.aurora.music.desktop.ui.LocalBackdropAvailable
+import com.aurora.music.desktop.ui.LocalTrayAvailable
+import com.aurora.music.desktop.ui.LocalWindowShown
+import com.aurora.music.desktop.ui.Shortcut
+import com.aurora.music.desktop.ui.MacTitleBar
+import com.aurora.music.desktop.ui.TitleBar
+import com.aurora.music.desktop.ui.WindowChrome
+import com.aurora.music.desktop.ui.WindowResizeEdges
+import com.aurora.music.ui.theme.GlassLook
+import com.aurora.music.desktop.ui.claimsSpace
+import com.aurora.music.desktop.ui.shortcut
+import com.aurora.music.localization.AppStrings
+import com.aurora.music.ui.AuroraApp
+import com.aurora.music.util.AppLog
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
+import java.awt.Dimension
+import java.awt.Frame
+import java.awt.GraphicsEnvironment
+import java.awt.Rectangle
+import java.awt.SystemTray
+import java.time.Duration
+import java.time.Instant
+import kotlin.concurrent.thread
+import kotlin.math.roundToInt
+import com.aurora.music.desktop.platform.WindowPlacement as SavedWindow
+
+private const val TAG = "AuroraMain"
+private const val QUIT_TIMEOUT_MS = 8_000L
+
+fun main() {
+    val start = ProcessHandle.current().info().startInstant().orElse(null)
+    fun since() = start?.let { " +${Duration.between(it, Instant.now()).toMillis()} ms" }.orEmpty()
+    val paths = DesktopPaths.default()
+    val instance = DesktopRuntime.init(paths) ?: return
+    if (HostPlatform.isLinux) LinuxDesktop.applyWindowClass()
+    // the menu bar icon is drawn as a template, so macos tints it to suit a light or dark menu bar
+    if (HostPlatform.isMac) System.setProperty("apple.awt.enableTemplateImages", "true")
+    // skiko's setup on linux needs compose's autodpi property first, and its laf branch would touch swing off the edt
+    if (HostPlatform.isWindows && System.getProperty("skiko.rendering.laf.global") == "false") {
+        thread(isDaemon = true, name = "skiko-warm") { runCatching { org.jetbrains.skiko.Library.load() } }
+    }
+    AppLog.d(TAG, "Starting Aurora ${BuildInfo.VERSION_NAME} on Java ${Runtime.version()}${since()}")
+    val shown = CompletableDeferred<Unit>()
+    com.aurora.music.desktop.web.Chromium.holdUntil(shown)
+    val container = DesktopContainer(paths)
+    AppLog.d(TAG, "Container built${since()}")
+    SingletonImageLoader.setSafe { container.imageLoader }
+    val settings = container.desktopSettings
+    val (language, savedWindow, initialPrefs) = runBlocking {
+        Triple(settings.languageTag.first(), settings.window.first(), container.settingsStore.uiPrefs.first())
+    }
+    // paper is flat paper like the website, so it keeps the window opaque whatever the translucency setting says
+    val initialTranslucent = runBlocking { settings.translucentWindow.first() } && initialPrefs.themeStyle != com.aurora.music.data.ThemeStyle.PAPER
+    val glassAtStart = initialTranslucent && WindowBackdrop.supported
+    val customTitleBar = !runBlocking { settings.systemTitleBar.first() }
+    AppStrings.setLocale(language)
+    thread(isDaemon = true, name = "strings-warm") { AppStrings.table }
+    val player = DesktopPlayer(DesktopPlaybackEngine(resolver = container.streamResolver), container.playerDependencies())
+    container.mixService.attach(player, container.scope)
+    val connect = com.aurora.music.desktop.connect.DesktopConnect(container, player)
+    AppLog.d(TAG, "Player built${since()}")
+    val shortcuts = MutableSharedFlow<Shortcut>(extraBufferCapacity = 8)
+    val raises = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    Runtime.getRuntime().addShutdownHook(Thread { container.folderLibrary.close(); container.queueStore.flushNow(); container.playHistory.flushNow() })
+
+    application {
+        remember { AppLog.d(TAG, "Composing${since()}") }
+        val windowState = rememberWindowState(
+            placement = if (savedWindow?.maximized == true) WindowPlacement.Maximized else WindowPlacement.Floating,
+            position = savedWindow?.takeIf(::onScreen)?.let { WindowPosition(it.x.dp, it.y.dp) } ?: WindowPosition(Alignment.Center),
+            size = savedWindow?.let { DpSize(it.width.dp, it.height.dp) } ?: defaultWindowSize(),
+        )
+        var bounds by remember { mutableStateOf(savedWindow) }
+        var restorePlacement by remember { mutableStateOf(windowState.placement) }
+        var composeWindow by remember { mutableStateOf<androidx.compose.ui.awt.ComposeWindow?>(null) }
+        var borderless by remember { mutableStateOf(false) }
+        var visible by remember { mutableStateOf(true) }
+        // windows and macos set up their title bar on the hidden window, before it first shows
+        var revealed by remember { mutableStateOf(!glassAtStart && !(customTitleBar && (HostPlatform.isWindows || HostPlatform.isMac))) }
+        var caption by remember { mutableStateOf<CaptionFrame?>(null) }
+        var quitting by remember { mutableStateOf(false) }
+        val closeToTray by settings.closeToTray.collectAsState(HostPlatform.isMac)
+        val translucentSetting by settings.translucentWindow.collectAsState(initialTranslucent)
+        val paperTheme by remember { container.settingsStore.uiPrefs.map { it.themeStyle == com.aurora.music.data.ThemeStyle.PAPER } }
+            .collectAsState(initialPrefs.themeStyle == com.aurora.music.data.ThemeStyle.PAPER)
+        val translucentWindow = translucentSetting && !paperTheme
+        val micaBackdrop by settings.micaBackdrop.collectAsState(false)
+        val glassLook by settings.glassLook.collectAsState(GlassLook())
+        val trayAvailable = remember { runCatching { SystemTray.isSupported() }.getOrDefault(false) }
+        val icon = rememberVectorPainter(AuroraLogo)
+        var systemAccent by remember { mutableStateOf(SystemAccent.current()?.let { Color(it) }) }
+        DisposableEffect(Unit) {
+            val watch = SystemAccent.listen { systemAccent = Color(it) }
+            onDispose { watch?.close() }
+        }
+
+        fun placement(): SavedWindow? {
+            val position = windowState.position
+            if (windowState.placement == WindowPlacement.Floating && position.isSpecified && !borderless) {
+                bounds = SavedWindow(position.x.value.roundToInt(), position.y.value.roundToInt(),
+                    windowState.size.width.value.roundToInt(), windowState.size.height.value.roundToInt())
+            }
+            val effective = if (borderless || windowState.placement == WindowPlacement.Fullscreen) restorePlacement else windowState.placement
+            return bounds?.copy(maximized = effective == WindowPlacement.Maximized)
+        }
+
+        fun setFullscreen(on: Boolean) {
+            val handle = composeWindow?.windowHandle ?: 0L
+            if (com.aurora.music.desktop.platform.BorderlessFullscreen.supported && handle != 0L) {
+                if (on && !borderless) {
+                    restorePlacement = windowState.placement
+                    borderless = com.aurora.music.desktop.platform.BorderlessFullscreen.enter(handle)
+                } else if (!on && borderless) borderless = !com.aurora.music.desktop.platform.BorderlessFullscreen.exit(handle)
+                return
+            }
+            val current = windowState.placement
+            if (on && current != WindowPlacement.Fullscreen) {
+                restorePlacement = current
+                windowState.placement = WindowPlacement.Fullscreen
+            } else if (!on && current == WindowPlacement.Fullscreen) {
+                // compose only leaves full screen on the way to floating; going straight to maximized keeps the bare full-screen frame
+                composeWindow?.let { window ->
+                    window.placement = WindowPlacement.Floating
+                    window.placement = restorePlacement
+                }
+                windowState.placement = restorePlacement
+            }
+        }
+
+        fun show() {
+            if (quitting) return
+            visible = true
+            windowState.isMinimized = false
+        }
+
+        fun quit() {
+            if (quitting) return
+            quitting = true
+            AppLog.d(TAG, "Quitting")
+            instance.stopListening()
+            placement()?.let { runCatching { runBlocking { settings.setWindow(it) } } }
+            // the window goes at once and the rest closes off the ui thread; connect's mdns goodbye alone takes seconds
+            composeWindow?.isVisible = false
+            visible = false
+            thread(isDaemon = true, name = "aurora-quit") {
+                val started = System.nanoTime()
+                fun step(name: String, close: () -> Unit) = runCatching(close).onFailure { AppLog.e(TAG, "Closing $name failed", it) }
+                val work = thread(name = "aurora-shutdown") {
+                    step("player", player::close)
+                    step("container", container::close)
+                    step("chromium", com.aurora.music.desktop.web.Chromium::shutdown)
+                    step("connect", connect::close)
+                }
+                work.join(QUIT_TIMEOUT_MS)
+                if (work.isAlive) AppLog.w(TAG, "Shutdown still running after $QUIT_TIMEOUT_MS ms, exiting anyway")
+                AppLog.d(TAG, "Shut down in ${(System.nanoTime() - started) / 1_000_000} ms")
+                instance.close()
+                java.awt.EventQueue.invokeLater { exitApplication() }
+            }
+        }
+
+        fun close() {
+            if (closeToTray && trayAvailable) visible = false else quit()
+        }
+
+        LaunchedEffect(Unit) { container.appUpdater.quitRequests.collect { quit() } }
+
+        // a window closed to the menu bar takes aurora out of the dock until it is shown again
+        if (HostPlatform.isMac) LaunchedEffect(visible) { com.aurora.music.desktop.mac.MacDock.setVisible(visible) }
+
+        // the app menu's quit and settings items and a click on the dock icon go through aurora's own paths
+        if (HostPlatform.isMac) DisposableEffect(Unit) {
+            val desktop = java.awt.Desktop.getDesktop()
+            fun supports(action: java.awt.Desktop.Action) = runCatching { desktop.isSupported(action) }.getOrDefault(false)
+            if (supports(java.awt.Desktop.Action.APP_QUIT_HANDLER)) desktop.setQuitHandler { _, response ->
+                response.cancelQuit()
+                java.awt.EventQueue.invokeLater { quit() }
+            }
+            if (supports(java.awt.Desktop.Action.APP_PREFERENCES)) desktop.setPreferencesHandler {
+                java.awt.EventQueue.invokeLater { show(); shortcuts.tryEmit(Shortcut.SETTINGS) }
+            }
+            if (supports(java.awt.Desktop.Action.APP_EVENT_REOPENED)) desktop.addAppEventListener(
+                java.awt.desktop.AppReopenedListener { java.awt.EventQueue.invokeLater { show() } },
+            )
+            onDispose { runCatching { desktop.setQuitHandler(null); desktop.setPreferencesHandler(null) } }
+        }
+
+        LaunchedEffect(windowState) {
+            snapshotFlow { Triple(windowState.placement, windowState.position, windowState.size) }.collectLatest {
+                delay(500)
+                placement()?.let { settings.setWindow(it) }
+            }
+        }
+
+        if (trayAvailable && !quitting) AppTray(icon, player, onShow = ::show, onQuit = ::quit)
+
+        Window(
+            onCloseRequest = ::close,
+            state = windowState,
+            visible = visible && revealed,
+            title = "Aurora",
+            icon = icon,
+            undecorated = customTitleBar && HostPlatform.isLinux,
+            onPreviewKeyEvent = { it.claimsSpace() },
+            onKeyEvent = { event -> event.shortcut()?.let(shortcuts::tryEmit) == true },
+        ) {
+            var windowHandle by remember { mutableStateOf(0L) }
+            var translucent by remember { mutableStateOf(false) }
+            LaunchedEffect(window) {
+                composeWindow = window
+                window.minimumSize = Dimension(960, 600)
+                if (!revealed) {
+                    if (glassAtStart) WindowBackdrop.prepare(window)
+                    if (customTitleBar && HostPlatform.isMac) com.aurora.music.desktop.mac.MacTitleBar.install(window.rootPane)
+                    else if (customTitleBar) caption = CaptionFrame.install(window)
+                    revealed = true
+                }
+                while (!window.isDisplayable) delay(16)
+                val handle = window.windowHandle
+                windowHandle = handle
+                // creating the system media session waits on winrt, so it stays off the reveal
+                launch(Dispatchers.IO) { player.mediaControls.attach(handle) { raises.tryEmit(Unit) } }
+                AppLog.d(TAG, "Window shown${since()}")
+                withFrameNanos { }
+                AppLog.d(TAG, "First frame${since()}")
+                shown.complete(Unit)
+            }
+            val fullscreen = borderless || windowState.placement == WindowPlacement.Fullscreen
+            // a window covering the whole screen skips dwm composition whenever it can, so its backdrop blinks in and out
+            LaunchedEffect(windowHandle, translucentWindow, micaBackdrop, fullscreen) {
+                if (windowHandle != 0L) translucent = WindowBackdrop.apply(window, translucentWindow && !fullscreen, micaBackdrop)
+            }
+            LaunchedEffect(window) {
+                merge(instance.activations, raises).collect {
+                    show()
+                    // toFront only takes effect once compose has shown and restored the window
+                    withTimeoutOrNull(1_000) { while (!window.isVisible || (window.extendedState and Frame.ICONIFIED) != 0) delay(16) }
+                    window.toFront()
+                    window.requestFocus()
+                }
+            }
+            val activePlayer by connect.active.collectAsState()
+            CompositionLocalProvider(LocalTrayAvailable provides trayAvailable, LocalBackdropAvailable provides WindowBackdrop.supported,
+                LocalWindowShown provides (visible && !windowState.isMinimized), com.aurora.music.desktop.connect.LocalConnect provides connect) {
+                AuroraRoot(container, activePlayer, initialPrefs, systemAccent, translucent, glassLook) {
+                    val undecorated = customTitleBar && HostPlatform.isLinux
+                    WindowChrome(windowHandle, translucent)
+                    AuroraApp(
+                        shortcuts = shortcuts,
+                        fullscreen = fullscreen,
+                        onFullscreenChange = ::setFullscreen,
+                        titleBar = {
+                            if (!fullscreen) when {
+                                customTitleBar && HostPlatform.isMac -> MacTitleBar(window, windowState)
+                                caption != null || undecorated -> TitleBar(window, windowState, caption, ::close)
+                            }
+                        },
+                    )
+                    if (undecorated && windowState.placement == WindowPlacement.Floating) WindowResizeEdges(window)
+                    com.aurora.music.ui.screens.auth.SoundCloudCaptchaWindow(container.soundcloudWriter)
+                }
+            }
+        }
+    }
+}
+
+private fun onScreen(window: SavedWindow): Boolean = runCatching {
+    val area = Rectangle(window.x, window.y, window.width, window.height)
+    GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.any { it.defaultConfiguration.bounds.intersects(area) }
+}.getOrDefault(false)
+
+private fun defaultWindowSize(): DpSize {
+    val screen = runCatching { GraphicsEnvironment.getLocalGraphicsEnvironment().maximumWindowBounds }.getOrNull()
+    val width = screen?.let { minOf(1440, it.width - 48) } ?: 1440
+    val height = screen?.let { minOf(900, it.height - 48) } ?: 900
+    return DpSize(width.coerceAtLeast(960).dp, height.coerceAtLeast(600).dp)
+}

@@ -1,0 +1,450 @@
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.time.Duration
+import java.time.Instant
+import java.util.Properties
+
+plugins {
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.jetbrains.compose)
+}
+
+val appVersion = Properties().apply {
+    rootProject.file("version.properties").inputStream().use { load(it) }
+}
+
+val hostOs: String = System.getProperty("os.name")
+val hostWindows = hostOs.startsWith("Windows")
+val hostLinux = hostOs.startsWith("Linux")
+val hostMac = hostOs.startsWith("Mac")
+val hostArm = System.getProperty("os.arch").let { it == "aarch64" || it == "arm64" }
+
+if (!hostWindows && !hostLinux && !hostMac) {
+    gradle.taskGraph.whenReady {
+        if (allTasks.any { it.project == project }) {
+            throw GradleException("The Aurora desktop app builds on Windows, Linux and macOS only; $hostOs is not supported yet.")
+        }
+    }
+}
+val nativeClassifier = when {
+    hostWindows -> "windows-x86_64"
+    hostMac -> if (hostArm) "macosx-arm64" else "macosx-x86_64"
+    else -> "linux-x86_64"
+}
+// compose's resource folder names for the current os and arch
+val resourcesTarget = when {
+    hostWindows -> "windows-x64"
+    hostMac -> if (hostArm) "macos-arm64" else "macos-x64"
+    else -> "linux-x64"
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+kotlin {
+    compilerOptions { jvmTarget.set(JvmTarget.JVM_21) }
+}
+
+dependencies {
+    implementation(project(":core"))
+    implementation(when {
+        hostWindows -> compose.desktop.windows_x64
+        hostMac -> if (hostArm) compose.desktop.macos_arm64 else compose.desktop.macos_x64
+        else -> compose.desktop.linux_x64
+    })
+    implementation(compose.material3)
+    implementation(compose.materialIconsExtended)
+    implementation(libs.compose.ui.backhandler)
+    implementation(libs.jetbrains.navigation.compose)
+    implementation(libs.jetbrains.lifecycle.viewmodel.compose)
+    implementation(libs.jetbrains.lifecycle.runtime.compose)
+    implementation(libs.kotlinx.coroutines.swing)
+    implementation(libs.coil3.compose)
+    implementation(libs.coil3.network.okhttp)
+    implementation(libs.javacpp)
+    implementation(libs.ffmpeg)
+    runtimeOnly(variantOf(libs.javacpp) { classifier(nativeClassifier) })
+    runtimeOnly(variantOf(libs.ffmpeg) { classifier(nativeClassifier) })
+    if (hostWindows) {
+        compileOnly(libs.dbus.java.core)
+        testImplementation(libs.dbus.java.core)
+    } else {
+        implementation(libs.dbus.java.core)
+        runtimeOnly(libs.dbus.java.transport.unixsocket)
+    }
+    implementation(libs.jna)
+    implementation(libs.jna.platform)
+    implementation(libs.jcefmaven)
+    implementation(libs.newpipeextractor)
+    implementation(libs.jaudiotagger)
+    implementation(libs.onnxruntime)
+    implementation(libs.okhttp.tls)
+    implementation(libs.jmdns)
+    testImplementation(libs.junit)
+    testImplementation(libs.okhttp.mockwebserver)
+}
+
+val nativeSource = rootProject.layout.projectDirectory.dir("native")
+// the mac port's own code and packaging live in the top-level mac folder
+val macPort = rootProject.layout.projectDirectory.dir("mac")
+val nativeBuildDir = layout.buildDirectory.dir("native")
+val appResources = layout.buildDirectory.dir("appResources")
+
+if (hostWindows) {
+    val configureNative by tasks.registering(Exec::class) {
+        inputs.file(nativeSource.file("CMakeLists.txt"))
+        outputs.file(nativeBuildDir.map { it.file("CMakeCache.txt") })
+        commandLine("cmake", "-S", nativeSource.asFile.path, "-B", nativeBuildDir.get().asFile.path, "-A", "x64")
+    }
+
+    val buildNative by tasks.registering(Exec::class) {
+        dependsOn(configureNative)
+        inputs.dir(nativeSource)
+        outputs.dir(nativeBuildDir.map { it.dir("bin") })
+        commandLine("cmake", "--build", nativeBuildDir.get().asFile.path, "--config", "Release", "--parallel")
+    }
+
+    val syncNative by tasks.registering(Sync::class) {
+        dependsOn(buildNative)
+        from(nativeBuildDir.map { it.dir("bin") }) { include("*.dll") }
+        // jna loads its dispatch dll from here instead of unpacking a fresh copy to temp each launch
+        from(configurations.runtimeClasspath.map { classpath ->
+            zipTree(classpath.incoming.artifactView {
+                componentFilter { it is org.gradle.api.artifacts.component.ModuleComponentIdentifier && it.module == "jna" }
+            }.files.singleFile)
+        }) {
+            include("com/sun/jna/win32-x86-64/jnidispatch.dll")
+            eachFile { path = name }
+            includeEmptyDirs = false
+        }
+        into(appResources.map { it.dir(resourcesTarget) })
+    }
+
+    tasks.matching { it.name == "prepareAppResources" }.configureEach { dependsOn(syncNative) }
+    tasks.test { dependsOn(syncNative) }
+} else if (hostLinux) {
+    val alsaSource = nativeSource.dir("alsa")
+    val alsaBuildDir = layout.buildDirectory.dir("native-alsa")
+
+    val configureAlsa by tasks.registering(Exec::class) {
+        inputs.file(alsaSource.file("CMakeLists.txt"))
+        outputs.file(alsaBuildDir.map { it.file("CMakeCache.txt") })
+        commandLine("cmake", "-S", alsaSource.asFile.path, "-B", alsaBuildDir.get().asFile.path, "-DCMAKE_BUILD_TYPE=Release")
+    }
+
+    val buildAlsa by tasks.registering(Exec::class) {
+        dependsOn(configureAlsa)
+        inputs.dir(alsaSource)
+        outputs.dir(alsaBuildDir.map { it.dir("bin") })
+        commandLine("cmake", "--build", alsaBuildDir.get().asFile.path, "--parallel")
+    }
+
+    val syncAlsa by tasks.registering(Sync::class) {
+        dependsOn(buildAlsa)
+        from(alsaBuildDir.map { it.dir("bin") }) { include("*.so") }
+        into(appResources.map { it.dir(resourcesTarget) })
+    }
+
+    tasks.matching { it.name == "prepareAppResources" }.configureEach { dependsOn(syncAlsa) }
+    tasks.test { dependsOn(syncAlsa) }
+}
+
+tasks.test {
+    systemProperty("compose.application.resources.dir", appResources.get().dir(resourcesTarget).asFile.path)
+    if (hostLinux) {
+        environment("LC_ALL", "C.UTF-8")
+        environment("DBUS_SESSION_BUS_ADDRESS", "unix:path=/nonexistent/aurora-test-bus")
+    }
+    if (hostMac) systemProperty("aurora.keychain", "off")
+    if (hostMac) jvmArgs("--add-opens=java.desktop/sun.awt=ALL-UNNAMED", "--add-opens=java.desktop/java.awt.peer=ALL-UNNAMED",
+        "--add-opens=java.desktop/sun.lwawt=ALL-UNNAMED", "--add-opens=java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
+}
+
+compose.desktop {
+    application {
+        mainClass = "com.aurora.music.desktop.MainKt"
+        jvmArgs += listOf("-XX:+UseZGC", "-XX:+ZGenerational", "-Xms64m", "-XX:SoftMaxHeapSize=512m", "-XX:ZUncommitDelay=30", "-Dfile.encoding=UTF-8")
+        // compose draws through skiko; java2d's direct3d pipeline hangs on full-screen focus changes once chromium loads opengl
+        jvmArgs += listOf("-Dsun.java2d.d3d=false", "-Dsun.java2d.noddraw=true")
+        // nothing draws with swing's look and feel; the folder picker sets its own
+        jvmArgs += "-Dskiko.rendering.laf.global=false"
+        // embedded chromium (sign-in pages and the hidden spotify and soundcloud pages)
+        jvmArgs += listOf("--add-opens=java.desktop/sun.awt=ALL-UNNAMED", "--add-opens=java.desktop/java.awt.peer=ALL-UNNAMED",
+            "--add-exports=java.base/java.lang=ALL-UNNAMED", "--add-exports=java.desktop/sun.awt=ALL-UNNAMED", "--add-exports=java.desktop/sun.java2d=ALL-UNNAMED")
+        if (hostLinux) jvmArgs += "--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED"
+        if (hostMac) {
+            // jcef's mac peer reaches into the lwawt classes
+            jvmArgs += listOf("--add-opens=java.desktop/sun.lwawt=ALL-UNNAMED", "--add-opens=java.desktop/sun.lwawt.macosx=ALL-UNNAMED",
+                "--add-exports=java.desktop/sun.lwawt=ALL-UNNAMED", "--add-exports=java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
+            jvmArgs += listOf("-Dapple.awt.application.name=Aurora", "-Dapple.awt.application.appearance=system")
+        }
+        nativeDistributions {
+            if (hostWindows) targetFormats(TargetFormat.Msi, TargetFormat.Exe)
+            if (hostMac) targetFormats(TargetFormat.Dmg)
+            packageName = "Aurora"
+            packageVersion = appVersion.getProperty("versionName")
+            description = "Aurora music player"
+            vendor = "Aurora"
+            appResourcesRootDir.set(appResources)
+            modules("java.instrument", "java.management", "java.naming", "java.net.http", "java.sql", "jdk.crypto.ec", "jdk.dynalink", "jdk.httpserver", "jdk.unsupported")
+            if (hostLinux) modules("jdk.security.auth")
+            windows {
+                // the msi product code follows the version, so every build needs its own to replace the installed one
+                packageVersion = appVersion.getProperty("versionName").substringBeforeLast('.') + "." +
+                    Duration.between(Instant.parse("2026-01-01T00:00:00Z"), Instant.now()).toMinutes() % 65_536
+                // the uninstaller wipes its whole folder, so keep it apart from the data in %LOCALAPPDATA%\Aurora
+                installationPath = "Aurora Music"
+                iconFile.set(project.file("packaging/aurora.ico"))
+                menuGroup = "Aurora"
+                upgradeUuid = "67dc3d5a-e732-4a4a-b9a6-d1126d48bca5"
+                perUserInstall = true
+                dirChooser = true
+                shortcut = true
+                menu = true
+            }
+            linux {
+                iconFile.set(project.file("packaging/aurora.png"))
+            }
+            macOS {
+                // jpackage wants a mac version whose first number is at least 1, with at most three parts
+                packageVersion = appVersion.getProperty("versionName").split('.').take(3).joinToString(".")
+                bundleID = "com.aurora.music"
+                dockName = "Aurora"
+                appCategory = "public.app-category.music"
+                iconFile.set(macPort.file("packaging/aurora.icns"))
+                minimumSystemVersion = "12.0"
+                infoPlist {
+                    extraKeysRawXml = """
+                        <key>NSMicrophoneUsageDescription</key>
+                        <string>Aurora listens to the microphone only while you talk to the AI DJ.</string>
+                        <key>NSBluetoothAlwaysUsageDescription</key>
+                        <string>Sign-in pages use Bluetooth to reach a nearby phone or security key when you sign in with a passkey.</string>
+                        <key>NSCameraUsageDescription</key>
+                        <string>A sign-in page asked to use the camera, for example to scan a passkey QR code.</string>
+                    """.trimIndent()
+                }
+            }
+        }
+    }
+}
+
+// after the plugin's own afterEvaluate, which registers these tasks and sets launcherJvmArgs from application.jvmArgs
+afterEvaluate {
+    // the jlinked runtime has no cds base archive and no launcher to dump one with, so the jdk's launcher dumps it
+    tasks.withType<org.jetbrains.compose.desktop.application.tasks.AbstractJLinkTask>().configureEach {
+        doLast {
+            val launcher = if (hostWindows) "bin/java.exe" else "bin/java"
+            val dumper = destinationDir.get().file(launcher).asFile
+            File(javaHome.get(), launcher).copyTo(dumper, overwrite = true).setExecutable(true)
+            try {
+                // zgc runs without compressed oops, so it looks for classes_nocoops.jsa
+                check(ProcessBuilder(dumper.path, "-XX:-UseCompressedOops", "-Xshare:dump").inheritIO().start().waitFor() == 0) { "CDS base archive dump failed" }
+            } finally {
+                dumper.delete()
+            }
+        }
+    }
+    // $APPDIR only exists in the packaged launcher, so it never goes in application.jvmArgs; jpackage's args file unescapes one backslash
+    if (hostWindows) tasks.withType<org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask>().configureEach {
+        launcherJvmArgs.add("-Djna.boot.library.path=\$APPDIR\\\\resources")
+    }
+}
+
+if (hostLinux) apply(from = "linux-packaging.gradle.kts")
+
+val androidRes = rootProject.layout.projectDirectory.dir("app/src/main/res")
+val desktopRes = layout.projectDirectory.dir("src/main/res")
+
+abstract class GenerateAndroidStrings : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val sources: ConfigurableFileCollection
+
+    @get:OutputDirectory
+    abstract val kotlinDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val resourceDir: DirectoryProperty
+
+    private class Values {
+        val strings = mutableMapOf<String, String>()
+        val plurals = mutableMapOf<String, Map<String, String>>()
+    }
+
+    @TaskAction
+    fun generate() {
+        val locales = sources.files.groupBy { it.parentFile.name }.mapNotNull { (dir, files) ->
+            localeTag(dir)?.let { tag -> tag to Values().apply { files.sortedBy { it.name }.forEach { read(it, this) } } }
+        }.toMap()
+        val strings = locales.values.flatMap { it.strings.keys }.distinct().sorted()
+        val plurals = locales.values.flatMap { it.plurals.keys }.distinct().sorted()
+        val source = kotlinDir.get().asFile.apply { deleteRecursively() }.resolve("com/aurora/music/R.kt")
+        source.parentFile.mkdirs()
+        source.writeText(buildString {
+            appendLine("package com.aurora.music")
+            appendLine()
+            appendLine("object R {")
+            listOf(Triple("string", 0x7f010000, strings), Triple("plurals", 0x7f020000, plurals)).forEach { (type, base, names) ->
+                appendLine("    object $type {")
+                names.forEachIndexed { index, name -> appendLine("        const val `${name.replace('.', '_')}` = 0x%08x".format(base + index)) }
+                appendLine("    }")
+            }
+            appendLine("}")
+        })
+        val tables = resourceDir.get().asFile.apply { deleteRecursively() }.resolve("strings").apply { mkdirs() }
+        locales.forEach { (tag, values) ->
+            tables.resolve("$tag.bin").outputStream().buffered().use { out ->
+                fun int(value: Int) = out.write(byteArrayOf((value ushr 24).toByte(), (value ushr 16).toByte(), (value ushr 8).toByte(), value.toByte()))
+                fun text(value: String?) = if (value == null) int(-1) else value.toByteArray().let { int(it.size); out.write(it) }
+                int(strings.size)
+                strings.forEach { text(values.strings[it]) }
+                int(plurals.size)
+                plurals.forEach { name -> QUANTITIES.forEach { text(values.plurals[name]?.get(it)) } }
+            }
+        }
+    }
+
+    private fun localeTag(dir: String): String? =
+        if (dir == "values") "default"
+        else Regex("values-([a-z]{2,3})(?:-r([A-Z]{2}))?").matchEntire(dir)?.groupValues?.let { (_, language, region) ->
+            val tag = if (language == "in") "id" else language
+            if (region.isEmpty()) tag else "$tag-$region"
+        }
+
+    private fun read(file: java.io.File, values: Values) {
+        val factory = javax.xml.parsers.DocumentBuilderFactory.newInstance().apply { isNamespaceAware = true }
+        factory.newDocumentBuilder().parse(file).documentElement.elements().forEach { element ->
+            val name = element.getAttribute("name")
+            when (element.localName) {
+                "string" -> check(values.strings.put(name, text(element)) == null) { "Duplicate string $name in $file" }
+                "plurals" -> {
+                    val items = element.elements().filter { it.localName == "item" }.associate { item ->
+                        item.getAttribute("quantity").also { check(it in QUANTITIES) { "Bad quantity $it in $name" } } to text(item)
+                    }
+                    check(values.plurals.put(name, items) == null) { "Duplicate plurals $name in $file" }
+                }
+            }
+        }
+    }
+
+    private fun org.w3c.dom.Node.children() = (0 until childNodes.length).map(childNodes::item)
+
+    private fun org.w3c.dom.Node.elements() = children().filterIsInstance<org.w3c.dom.Element>()
+
+    private fun isSpace(c: Char) = c == ' ' || c in '\t'..'\r'
+
+    private fun text(element: org.w3c.dom.Element): String {
+        val segments = mutableListOf<String>()
+        val current = StringBuilder()
+        var styled = false
+        fun flush() {
+            if (current.isNotEmpty()) segments += current.toString()
+            current.setLength(0)
+        }
+        fun walk(node: org.w3c.dom.Node) {
+            node.children().forEach { child ->
+                when (child) {
+                    is org.w3c.dom.Text -> current.append(child.data)
+                    is org.w3c.dom.Element -> {
+                        styled = styled || child.namespaceURI == null
+                        flush()
+                        walk(child)
+                        flush()
+                    }
+                }
+            }
+        }
+        walk(element)
+        flush()
+        if (!styled && segments.isNotEmpty()) {
+            segments[0] = segments.first().trimStart { isSpace(it) }
+            segments[segments.lastIndex] = segments.last().trimEnd { isSpace(it) }
+        }
+        check(!Regex("@null|@empty|[@?]\\S*/\\S+").matches(segments.joinToString("").trim { isSpace(it) })) { "Resource references are not supported: $segments" }
+        val out = StringBuilder()
+        var quoted = false
+        var space = false
+        segments.forEach { segment ->
+            var i = 0
+            while (i < segment.length) {
+                val c = segment[i++]
+                if (!quoted && isSpace(c)) {
+                    if (!space) out.append(' ')
+                    space = true
+                    continue
+                }
+                space = false
+                when {
+                    c == '\\' && i < segment.length -> when (val escaped = segment[i++]) {
+                        't' -> out.append('\t')
+                        'n' -> out.append('\n')
+                        'u' -> {
+                            val hex = segment.substring(i, minOf(i + 4, segment.length))
+                            check(Regex("[0-9a-fA-F]{4}").matches(hex)) { "Invalid unicode escape in $segment" }
+                            out.append(hex.toInt(16).toChar())
+                            i += 4
+                        }
+                        else -> out.append(escaped)
+                    }
+                    c == '\\' -> Unit
+                    c == '"' -> quoted = !quoted
+                    c == '\'' && !quoted -> error("Unescaped apostrophe in $segment")
+                    else -> out.append(c)
+                }
+            }
+        }
+        return out.toString()
+    }
+
+    companion object {
+        private val QUANTITIES = listOf("zero", "one", "two", "few", "many", "other")
+    }
+}
+
+val generateAndroidStrings by tasks.registering(GenerateAndroidStrings::class) {
+    sources.from(fileTree(androidRes) { include("values/*.xml", "values-*/*.xml") })
+    sources.from(fileTree(desktopRes) { include("values/*.xml", "values-*/*.xml") })
+    kotlinDir.set(layout.buildDirectory.dir("generated/androidStrings/kotlin"))
+    resourceDir.set(layout.buildDirectory.dir("generated/androidStrings/resources"))
+}
+
+val syncAndroidAssets by tasks.registering(Sync::class) {
+    from(androidRes.dir("font")) {
+        include("dm_sans*.ttf", "plus_jakarta_sans*.ttf", "manrope.ttf")
+        exclude("circular_*")
+        into("font")
+    }
+    from(rootProject.layout.projectDirectory.dir("app/src/main/assets")) { include("font_licenses/*.txt") }
+    filteringCharset = "UTF-8"
+    into(layout.buildDirectory.dir("generated/androidAssets"))
+}
+
+sourceSets.named("main") {
+    java.srcDir(macPort.dir("src/main/java"))
+    resources.srcDir(generateAndroidStrings.flatMap { it.resourceDir })
+    resources.srcDir(syncAndroidAssets)
+}
+
+val generateBuildInfo by tasks.registering {
+    val versionName = appVersion.getProperty("versionName")
+    val composeVersion = libs.versions.composeMultiplatform.get()
+    val output = layout.buildDirectory.dir("generated/buildInfo/kotlin")
+    inputs.property("versionName", versionName)
+    inputs.property("composeVersion", composeVersion)
+    outputs.dir(output)
+    doLast {
+        output.get().file("com/aurora/music/desktop/platform/BuildInfo.kt").asFile.apply {
+            parentFile.mkdirs()
+            writeText("package com.aurora.music.desktop.platform\n\nobject BuildInfo {\n    const val VERSION_NAME = \"$versionName\"\n    const val COMPOSE_VERSION = \"$composeVersion\"\n}\n")
+        }
+    }
+}
+
+kotlin.sourceSets.named("main") {
+    kotlin.srcDir(macPort.dir("src/main/kotlin"))
+    kotlin.srcDir(generateAndroidStrings.flatMap { it.kotlinDir })
+    kotlin.srcDir(generateBuildInfo)
+}
