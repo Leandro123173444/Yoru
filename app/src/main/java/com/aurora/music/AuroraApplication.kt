@@ -32,6 +32,7 @@ class AuroraApplication : Application(), coil.ImageLoaderFactory, androidx.lifec
 
     override fun onCreate() {
         super.onCreate()
+        com.aurora.music.util.CrashLog.install(this)
         com.aurora.music.data.artwork.ArtworkUrls.authority = "$packageName.artwork"
         AppLog.sink = { level, tag, message, error ->
             when (level) {

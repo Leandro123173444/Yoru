@@ -46,6 +46,7 @@ class AuroraActivity : AppCompatActivity() {
         com.aurora.music.localization.AppStrings.useConfiguration(resources.configuration)
         handleAuthRedirect(intent)
         if (savedInstanceState == null) { handleMediaSearch(intent); handleOpenPlayer(intent) }
+        window.decorView.post { com.aurora.music.util.CrashLog.showIfPending(this) }
         setContent {
             // first read is here, at first composition, so the container builds while the window comes up
             val uiPrefs by (application as AuroraApplication).container.uiPrefs.collectAsStateWithLifecycle()

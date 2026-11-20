@@ -272,7 +272,9 @@ class LocalLibrary(
             cols.add(MediaStore.Audio.Media.DISC_NUMBER)
         }
         val projection = cols.toTypedArray()
-        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
+        // YORU: with chosen folders also accept audio the system did not flag as music
+        val selection = if (folders.isEmpty()) "${MediaStore.Audio.Media.IS_MUSIC} != 0"
+            else "${MediaStore.Audio.Media.IS_MUSIC} != 0 OR ${MediaStore.Audio.Media.DURATION} >= 30000"
         val sort = "${MediaStore.Audio.Media.TITLE} COLLATE NOCASE ASC"
         val out = ArrayList<Song>()
         val albumDateAdded = HashMap<String, Long>()
